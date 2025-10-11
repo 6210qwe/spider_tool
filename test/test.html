@@ -1,0 +1,898 @@
+D:\software\anaconda\envs\yaojianju\python.exe D:\爬虫项目\zhaobiao_project\zhaobiao\crawlall.py
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>全国公共资源交易平台</title>
+<link type="text/css" href="/information/css/main.css" rel="stylesheet">
+<link type="text/css" href="/information/css/news.css" rel="stylesheet">
+<script src="/information/js/jquery-1.6.4.min.js"></script>
+<script src="/information/js/baseutil.js"></script>
+<script src="/information/js/current.js"></script>
+
+<script>
+
+var txtfind = '';
+
+function btnfind() {
+	if(document.getElementById("findtxt").value == '') {
+		window.location.reload();
+		return;
+	}
+	txtfind = document.getElementById("findtxt").value;
+
+	var myurl = myurl = "http://search.ggzy.gov.cn/search/s?database=policy&pageSize=20&&qt="+txtfind;
+
+	$("#ss").html("<iframe class='findIframe' frameborder='no' border='0' src='"+myurl+"' scrolling='no'></iframe>");
+
+}
+function txtsearch(e){
+    var e=e||window.event;
+    if (e.keyCode == 13) {
+    	$("#sbtn").trigger("click");
+    }
+}
+$(document).ready(function(){
+
+		$(".ul  li:nth-child(5n)").addClass("myn5line");
+		$(".ul  li:nth-child(5n)").css("background-position","12px 14px");
+		$(".ul  li:last").css("border-bottom","none");
+		cmsBeginSearch('policy');
+});
+
+</script>
+</head>
+
+<body>
+
+    <div class="header">
+<div class="header_top">
+<p class="p_fliat">
+<a href="/information/info/govreport/govreport.shtml" target="_blank">政府网站工作年度报表</a>
+</p>
+<div id="addNewSearch">
+<div class="p_last" style="margin-right:0px;"><a href="/information/serve/wechat.jsp" target="_blank"><img src="/information/images/weixin.png" id="weixin"></a></div>
+</div>
+<div id="ewm" >
+<div class="arrows"><img src="/information/images/ewm.png"></div>
+<div class="div">
+<div class="div_on"><img src="/information/images/wechatserve.jpg" width="100" height="100"><p>服务号</p></div>
+<!--     <div class="div_tw"><img src="/information/images/wechatdy.jpg" width="100" height="100"><p>订阅号</p></div> -->
+</div>
+</div>
+</div>
+</div>
+<script>
+$(function(){
+$("#weixin").hover(function(){
+$("#ewm").slideDown();
+},function(){
+var timeutId=setTimeout(function(){
+$("#ewm").slideUp();
+},100);
+$("#ewm").hover(function(){
+clearTimeout(timeutId);
+},function(){
+$(this).slideUp();
+});
+});
+});
+</script>
+<div class="banner">
+</div>
+<div class="nav_bj">
+<div class="nav">
+<ul class="nav_ul">
+<li class="nav_stair nav_first"><a href="http://www.ggzy.gov.cn">首页</a></li>
+<li class="nav_stair"><a href="/information/info/govfunc/govfunc.shtml">机构职能</a></li>
+<li class="nav_stair"><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp">交易公开</a>
+<ul class="nav_second nav_special">
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=01">工程建设</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=02">政府采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=03">土地使用权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=04">矿业权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=05">国有产权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=21">碳排放权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=22">排污权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=23">药品采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=24">二类疫苗</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=25">林权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=90">其他</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="/information/credit/creditList.jsp">交易诚信</a>
+<ul class="nav_second">
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=1">违法违规</a></li>
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=2">奖励信息</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/companyPer.html#/home">数据服务</a></li>
+<li class="nav_stair"><a href="/information/deal/dealCollect.html">交易统计</a></li>
+<li class="nav_stair"><a href="/information/platform/platform.html">平台导航</a></li>
+<li class="nav_stair"><a href="/information/info/zcwj00/policyList.shtml">政策法规</a>
+<ul class="nav_second">
+<li><a href="/information/info/zcwj00/policyList.shtml">政策法规文件</a></li>
+<li><a href="/information/info/zcjd/policyList.shtml">政策法规解读</a></li>
+</ul>
+</li>
+<!-- <li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>-->
+<!--     <li class="nav_stair"><a href="https://59.252.80.14/reTurnUrl" target="_blank">统一认证</a></li>-->
+<li class="nav_stair"><a href="/information/serve/service.html">服务中心</a>
+<ul class="nav_second">
+<li><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>
+<li><a href="/information/serve/wechat.jsp">微信订阅</a></li>
+<li><a href="/information/serve/opinion.jsp">意见建议</a></li>
+<li><a href="/information/serve/collectList.jsp">调查征集</a></li>
+<li><a href="/information/serve/regards.html">关于我们</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+    <div class="location">
+      <a href="http://www.ggzy.gov.cn">首页</a>&nbsp;&nbsp;>&nbsp;&nbsp;<a href="/info/zcwj00/policyList.shtml"  target="_self">政策法规文件</a>
+    </div>
+    <div class="news">
+    <div class="rdgz" >
+    	<div class="rdgz-left" id="ss">
+            <ul id="contextId" class="ul">
+
+
+<li><a href="/info/zcwj00/2022-12/28/content_90c579c9c50e4f0d9c29c24b7f8b8cce.shtml" target="_blank"  >国家发展改革委 人民银行关于印发《全国公共信用信息基础目录（2022年版）》和《全国失信惩戒措施基础清单...</a>
+<span>2022-12-28
+</span></li>
+
+<li><a href="/info/zcwj00/2022-09/01/content_42924b550c1d495395e458e4a1219ec5.shtml" target="_blank"  >水利部 国家发展改革委 财政部关于推进用水权改革的指导意见</a>
+<span>2022-09-01
+</span></li>
+
+<li><a href="/info/zcwj00/2022-08/01/content_ef1aa1fb2822429ab12a608c9e21d1ed.shtml" target="_blank"  >国家发展改革委等部门关于严格执行招标投标法规制度进一步规范招标投标主体行为的若干意见</a>
+<span>2022-08-01
+</span></li>
+
+<li><a href="/info/zcwj00/2022-03/08/content_86e7357ee6f548f6ae27e86521e58950.shtml" target="_blank"  >国家发展改革委关于推动长江三角洲区域公共资源交易一体化发展的意见</a>
+<span>2022-03-08
+</span></li>
+
+<li><a href="/info/zcwj00/2022-01/27/content_ed161b94f7b543049169d76bb986ae2b.shtml" target="_blank"  >中华人民共和国财政部令第110号--政府采购框架协议采购方式管理暂行办法</a>
+<span>2022-01-27
+</span></li>
+
+<li><a href="/info/zcwj00/2021-12/21/content_6981d778ef564176afac92feec3390f1.shtml" target="_blank"  >国务院办公厅关于印发要素市场化配置综合改革试点总体方案的通知</a>
+<span>2021-12-21
+</span></li>
+
+<li><a href="/info/zcwj00/2021-11/10/content_5c0d7eedae03457985cf479ba5678ea0.shtml" target="_blank"  >国务院办公厅关于鼓励和支持社会资本参与生态保护修复的意见</a>
+<span>2021-11-10
+</span></li>
+
+<li><a href="/info/zcwj00/2020-12/18/content_88658f20b39746649d23d1e217a99b4a.shtml" target="_blank"  >关于印发《政府采购促进中小企业发展管理办法》的通知</a>
+<span>2020-12-18
+</span></li>
+
+<li><a href="/info/zcwj00/2020-09/11/content_c76a5c765f4c440399beeb6e33902ade.shtml" target="_blank"  >住房和城乡建设部关于落实建设单位工程质量首要责任的通知</a>
+<span>2020-09-11
+</span></li>
+
+<li><a href="/info/zcwj00/2020-08/06/content_7e3579bdd4ab41dbb27b1e2d2ec0f794.shtml" target="_blank"  >交通运输部关于推动交通运输领域新型基础设施建设的指导意见</a>
+<span>2020-08-06
+</span></li>
+
+<li><a href="/info/zcwj00/2020-07/24/content_7dc0f052642f43c49110ee6b4599aedd.shtml" target="_blank"  >十七部门关于健全支持中小企业发展制度的若干意见</a>
+<span>2020-07-24
+</span></li>
+
+<li><a href="/info/zcwj00/2020-07/08/content_df40232cd203443480230d5e8d902a1f.shtml" target="_blank"  >关于支持民营企业参与交通基础设施建设发展的实施意见</a>
+<span>2020-07-08
+</span></li>
+
+<li><a href="/info/zcwj00/2020-06/12/content_b82ba4b996b741c78bdfa3c22ff1ab51.shtml" target="_blank"  >住房和城乡建设部办公厅关于印发城市轨道交通工程建设安全生产标准化管理技术指南的通知</a>
+<span>2020-06-12
+</span></li>
+
+<li><a href="/info/zcwj00/2020-05/22/content_cf83b8fc8b8945fcbc5a5f8af939d9eb.shtml" target="_blank"  >自然资源部办公厅关于加强国土空间规划监督管理的通知</a>
+<span>2020-05-22
+</span></li>
+
+<li><a href="/info/zcwj00/2020-02/25/content_ae101f2672d049498f02afbc3617c99b.shtml" target="_blank"  >工业和信息化部印发《关于有序推动工业通信业企业复工复产的指导意见》</a>
+<span>2020-02-25
+</span></li>
+
+<li><a href="/info/zcwj00/2020-01/22/content_938857d485c84839a4a150fe59ba955d.shtml" target="_blank"  >中华人民共和国财政部令第102号--政府购买服务管理办法</a>
+<span>2020-01-22
+</span></li>
+
+<li><a href="/info/zcwj00/2020-01/21/content_da52e25338274edb8b56688487c6bc93.shtml" target="_blank"  >国务院办公厅关于印发国家政务信息化项目建设管理办法的通知</a>
+<span>2020-01-21
+</span></li>
+
+<li><a href="/info/zcwj00/2020-01/10/content_5bb7333f45474ffb86ad3bf5630981bb.shtml" target="_blank"  >国家发展改革委关于印发《全国公共资源交易目录指引》的通知</a>
+<span>2020-01-10
+</span></li>
+
+<li><a href="/info/zcwj00/2019-12/31/content_c8a88760b22e4055ad333e90d8a18c58.shtml" target="_blank"  >李克强签署国务院令公布《中华人民共和国外商投资法实施条例》</a>
+<span>2019-12-31
+</span></li>
+
+<li><a href="/info/zcwj00/2019-12/28/content_02b0601c92c24645b7546851e4266526.shtml" target="_blank"  >自然资源部关于实施海砂采矿权和海域使用权“两权合一”招拍挂出让的通知</a>
+<span>2019-12-28
+</span></li>
+
+<script type="text/javascript" src="/info/xhtml/js/page.js"></script><script>window.onload=function() {createPageHTML('page_div',4, 2,'policyList','shtml',77);}</script>
+
+            </ul>
+
+            <div class="paging" id="page_div"></div>
+        </div>
+        <div class="rdgz-right">
+        	<div class="search">
+            	<input class="text" type="text" placeholder="请输入关键字" style="width: 260px;" name="findtxt" id="findtxt" onkeypress="txtsearch(event)">
+				<input type="button" id="sbtn" value="搜索" onclick="btnfind()" class="btn">
+            </div>
+			<div class="rdgz-right-bottom">
+				<img src="/information/images/policypic.jpg"/>
+			</div>
+        </div>
+    </div>
+    </div>
+    <div class="foot">
+<ul>
+<li><a href="/information/home/webmap.html" target="_blank">网站地图</a><span>|</span></li>
+<li><a href="/information/home/webStated.html" target="_blank">网站声明</a><span>|</span></li>
+<li><a href="javascript:;" onclick="addFavorite();">添加收藏</a><span>|</span></li>
+<li><a href="/information/home/contact.html" target="_blank">联系我们</a></li>
+</ul>
+</div>
+<div class="footer">
+<div class="footer_page" style="width:990px;">
+<div style="float:left;margin-top:5px !important;">
+<img onclick="linkto_jiucuo('bm04000008')" style="margin:0;border:0;cursor: pointer;" src="/information/images/jiucuo.png">
+</div>
+<div style="float:left;width:85px;height:85px;margin-top:-5px !important;">
+<a href="http://bszs.conac.cn/sitename?method=show&amp;id=59FE0779EB534910E053022E1AAC7D54" target="_blank">
+<img id="imgConac" vspace="0" hspace="0" border="0" src="/information/images/imgConac.png" data-bd-imgshare-binded="1">
+</a>
+</div>
+<div style="float:left;margin-left:20px;">
+<p>主办：国家信息中心&nbsp;&nbsp;&nbsp;&nbsp;指导单位： 国家发展和改革委员会 </p>
+<p>网站标识码：bm04000008&nbsp;&nbsp;<a href="https://beian.miit.gov.cn/" target="_blank" style="color:#000">京ICP备05052393号-9</a>&nbsp;&nbsp;<!--<img src="/information/images/guobiao.png" width="14" height="14">--> 京公网安备11010202007733号 </p>
+<p>地址：北京西城区三里河路58号&nbsp;&nbsp;&nbsp;&nbsp;邮政编码：100045</p>
+</div>
+</div>
+</div>
+<script type="text/javascript">
+function linkto_jiucuo(site_code) {
+//获取该站点需要纠错页面的url地址
+var url = "";
+if (parent !== window) {
+try {
+url = window.top.location.href;
+} catch (e) {
+url = window.top.document.referrer;
+}
+}
+if (url.length == 0)
+url = document.location.href;
+//跳转至纠错系统填写页面
+window.open("http://121.43.68.40/exposure/jiucuo.html?site_code=" + site_code + "&url=" + encodeURIComponent(url));
+}
+function addFavorite() {
+var url = window.location;
+var title = document.title;
+var ua = navigator.userAgent.toLowerCase();
+if (ua.indexOf("360se") > -1) {
+alert("由于360浏览器功能限制，请按 Ctrl+D 手动收藏！");
+} else if (ua.indexOf("msie 8") > -1) {
+window.external.AddToFavoritesBar(url, title); //IE8
+} else if (document.all) {
+try{
+window.external.addFavorite(url, title);
+}catch(e){
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+} else if (window.sidebar) {
+window.sidebar.addPanel(title, url, "");
+} else {
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+}
+</script>
+
+</body>
+</html>
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>全国公共资源交易平台</title>
+<link type="text/css" href="/information/css/main.css" rel="stylesheet">
+<link type="text/css" href="/information/css/news.css" rel="stylesheet">
+<script src="/information/js/jquery-1.6.4.min.js"></script>
+<script src="/information/js/baseutil.js"></script>
+<script src="/information/js/current.js"></script>
+
+<script>
+
+var txtfind = '';
+
+function btnfind() {
+	if(document.getElementById("findtxt").value == '') {
+		window.location.reload();
+		return;
+	}
+	txtfind = document.getElementById("findtxt").value;
+
+	var myurl = myurl = "http://search.ggzy.gov.cn/search/s?database=policy&pageSize=20&&qt="+txtfind;
+
+	$("#ss").html("<iframe class='findIframe' frameborder='no' border='0' src='"+myurl+"' scrolling='no'></iframe>");
+
+}
+function txtsearch(e){
+    var e=e||window.event;
+    if (e.keyCode == 13) {
+    	$("#sbtn").trigger("click");
+    }
+}
+$(document).ready(function(){
+
+		$(".ul  li:nth-child(5n)").addClass("myn5line");
+		$(".ul  li:nth-child(5n)").css("background-position","12px 14px");
+		$(".ul  li:last").css("border-bottom","none");
+		cmsBeginSearch('policy');
+});
+
+</script>
+</head>
+
+<body>
+
+    <div class="header">
+<div class="header_top">
+<p class="p_fliat">
+<a href="/information/info/govreport/govreport.shtml" target="_blank">政府网站工作年度报表</a>
+</p>
+<div id="addNewSearch">
+<div class="p_last" style="margin-right:0px;"><a href="/information/serve/wechat.jsp" target="_blank"><img src="/information/images/weixin.png" id="weixin"></a></div>
+</div>
+<div id="ewm" >
+<div class="arrows"><img src="/information/images/ewm.png"></div>
+<div class="div">
+<div class="div_on"><img src="/information/images/wechatserve.jpg" width="100" height="100"><p>服务号</p></div>
+<!--     <div class="div_tw"><img src="/information/images/wechatdy.jpg" width="100" height="100"><p>订阅号</p></div> -->
+</div>
+</div>
+</div>
+</div>
+<script>
+$(function(){
+$("#weixin").hover(function(){
+$("#ewm").slideDown();
+},function(){
+var timeutId=setTimeout(function(){
+$("#ewm").slideUp();
+},100);
+$("#ewm").hover(function(){
+clearTimeout(timeutId);
+},function(){
+$(this).slideUp();
+});
+});
+});
+</script>
+<div class="banner">
+</div>
+<div class="nav_bj">
+<div class="nav">
+<ul class="nav_ul">
+<li class="nav_stair nav_first"><a href="http://www.ggzy.gov.cn">首页</a></li>
+<li class="nav_stair"><a href="/information/info/govfunc/govfunc.shtml">机构职能</a></li>
+<li class="nav_stair"><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp">交易公开</a>
+<ul class="nav_second nav_special">
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=01">工程建设</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=02">政府采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=03">土地使用权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=04">矿业权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=05">国有产权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=21">碳排放权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=22">排污权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=23">药品采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=24">二类疫苗</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=25">林权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=90">其他</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="/information/credit/creditList.jsp">交易诚信</a>
+<ul class="nav_second">
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=1">违法违规</a></li>
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=2">奖励信息</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/companyPer.html#/home">数据服务</a></li>
+<li class="nav_stair"><a href="/information/deal/dealCollect.html">交易统计</a></li>
+<li class="nav_stair"><a href="/information/platform/platform.html">平台导航</a></li>
+<li class="nav_stair"><a href="/information/info/zcwj00/policyList.shtml">政策法规</a>
+<ul class="nav_second">
+<li><a href="/information/info/zcwj00/policyList.shtml">政策法规文件</a></li>
+<li><a href="/information/info/zcjd/policyList.shtml">政策法规解读</a></li>
+</ul>
+</li>
+<!-- <li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>-->
+<!--     <li class="nav_stair"><a href="https://59.252.80.14/reTurnUrl" target="_blank">统一认证</a></li>-->
+<li class="nav_stair"><a href="/information/serve/service.html">服务中心</a>
+<ul class="nav_second">
+<li><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>
+<li><a href="/information/serve/wechat.jsp">微信订阅</a></li>
+<li><a href="/information/serve/opinion.jsp">意见建议</a></li>
+<li><a href="/information/serve/collectList.jsp">调查征集</a></li>
+<li><a href="/information/serve/regards.html">关于我们</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+    <div class="location">
+      <a href="http://www.ggzy.gov.cn">首页</a>&nbsp;&nbsp;>&nbsp;&nbsp;<a href="/info/zcwj00/policyList.shtml"  target="_self">政策法规文件</a>
+    </div>
+    <div class="news">
+    <div class="rdgz" >
+    	<div class="rdgz-left" id="ss">
+            <ul id="contextId" class="ul">
+
+
+<li><a href="/info/zcwj00/2019-12/10/content_24d07a5a497f4d09a3d9b3ed4b8d35ea.shtml" target="_blank"  >中华人民共和国财政部令第101号--政府采购信息发布管理办法</a>
+<span>2019-12-10
+</span></li>
+
+<li><a href="/info/zcwj00/2019-06/30/content_bd9e7af1333f441e951a130d86f79ba7.shtml" target="_blank"  >中华人民共和国疫苗管理法</a>
+<span>2019-06-30
+</span></li>
+
+<li><a href="/info/zcwj00/2019-02/04/content_9052e453fc52469ba8812fa30545686d.shtml" target="_blank"  >关于调整优化节能产品、环境标志产品政府采购执行机制的通知</a>
+<span>2019-02-04
+</span></li>
+
+<li><a href="/info/zcwj00/2019-01/17/content_a480769e4b9a465d9044980002182fb6.shtml" target="_blank"  >国务院办公厅关于印发国家组织药品集中采购和使用试点方案的通知</a>
+<span>2019-01-17
+</span></li>
+
+<li><a href="/info/zcwj00/2019-01/16/content_1d7b110f83434ca286f851f3793d5d08.shtml" target="_blank"  >住房和城乡建设部关于印发建筑工程施工发包与承包违法行为认定查处管理办法的通知</a>
+<span>2019-01-16
+</span></li>
+
+<li><a href="/info/zcwj00/2018-12/27/content_2896029ef2bc496987296f943bed1fb9.shtml" target="_blank"  >自然资源部关于调整《矿业权交易规则》有关规定的通知</a>
+<span>2018-12-27
+</span></li>
+
+<li><a href="/info/zcwj00/2018-12/24/content_b76f6a8067bb4730a1f97f7fe18e599c.shtml" target="_blank"  >关于印发《中央行政事业单位国有资产配置管理办法》的通知</a>
+<span>2018-12-24
+</span></li>
+
+<li><a href="/info/zcwj00/2018-12/05/content_da70b5c7865e44ed9e4941fcf7c6ce09.shtml" target="_blank"  >多部门联合印发《关于对政府采购领域严重违法失信主体开展联合惩戒的合作备忘录》的通知</a>
+<span>2018-12-05
+</span></li>
+
+<li><a href="/info/zcwj00/2018-11/22/content_a6c536482aed4d7f815b50a8b516decd.shtml" target="_blank"  >交通运输部关于印发《农村公路建设质量管理办法》的通知</a>
+<span>2018-11-22
+</span></li>
+
+<li><a href="/info/zcwj00/2018-10/08/content_f4ee006c813e4b1faa02d25aac4fcea2.shtml" target="_blank"  >关于印发《公共资源交易平台系统数据规范（V2.0）》的通知</a>
+<span>2018-10-08
+</span></li>
+
+<li><a href="/info/zcwj00/2018-09/29/content_e9756746875a444cbf822811ac1b63a4.shtml" target="_blank"  >铁路工程建设项目招标投标管理办法（中华人民共和国交通运输部令2018年第13号）</a>
+<span>2018-09-29
+</span></li>
+
+<li><a href="/info/zcwj00/2018-09/28/content_2d93eb89c35142ec92ea17d9ce73802f.shtml" target="_blank"  >住房城乡建设部关于修改《房屋建筑和市政基础设施工程施工招标投标管理办法》的决定</a>
+<span>2018-09-28
+</span></li>
+
+<li><a href="/info/zcwj00/2018-08/28/content_1f9d046a88d9488091cdd7b55047f992.shtml" target="_blank"  >财政部 国家发展改革委关于调整公布第二十四期节能产品政府采购清单的通知</a>
+<span>2018-08-28
+</span></li>
+
+<li><a href="/info/zcwj00/2018-08/13/content_2f3f3b4168b34266866a8dc05245cc38.shtml" target="_blank"  >财政部 生态环境部关于调整公布第二十二期环境标志产品政府采购清单的通知</a>
+<span>2018-08-13
+</span></li>
+
+<li><a href="/info/zcwj00/2018-07/19/content_b02beac8a51b4d949df38985a42c2366.shtml" target="_blank"  >国家卫生健康委员会关于印发政府采购管理暂行办法的通知</a>
+<span>2018-07-19
+</span></li>
+
+<li><a href="/info/zcwj00/2018-07/02/content_74ef29ec469c40ad8b7b722468ccca6c.shtml" target="_blank"  >住房城乡建设部办公厅征求《关于加快推进实施工程担保制度的指导意见（征求意见稿）》意见的函</a>
+<span>2018-07-02
+</span></li>
+
+<li><a href="/info/zcwj00/2018-06/11/content_20ef806a4ff541ac80946b3e239f3a16.shtml" target="_blank"  >国家发展改革委关于印发《必须招标的基础设施和公用事业项目范围规定》的通知</a>
+<span>2018-06-11
+</span></li>
+
+<li><a href="/info/zcwj00/2018-05/18/content_02518de4f43a4c94adf3290e7272b333.shtml" target="_blank"  >国务院办公厅关于开展工程建设项目审批制度改革试点的通知</a>
+<span>2018-05-18
+</span></li>
+
+<li><a href="/info/zcwj00/2018-03/12/content_3791512283444f668f346b6e021063aa.shtml" target="_blank"  >中华人民共和国国家发展和改革委员会令</a>
+<span>2018-03-12
+</span></li>
+
+<li><a href="/info/zcwj00/2017-12/28/content_ea39c85a313f4105ba3c8915291bc5ae.shtml" target="_blank"  >国务院办公厅关于推进公共资源配置领域政府信息公开的意见 </a>
+<span>2017-12-28
+</span></li>
+
+<script type="text/javascript" src="/info/xhtml/js/page.js"></script><script>window.onload=function() {createPageHTML('page_div',4, 3,'policyList','shtml',77);}</script>
+
+            </ul>
+
+            <div class="paging" id="page_div"></div>
+        </div>
+        <div class="rdgz-right">
+        	<div class="search">
+            	<input class="text" type="text" placeholder="请输入关键字" style="width: 260px;" name="findtxt" id="findtxt" onkeypress="txtsearch(event)">
+				<input type="button" id="sbtn" value="搜索" onclick="btnfind()" class="btn">
+            </div>
+			<div class="rdgz-right-bottom">
+				<img src="/information/images/policypic.jpg"/>
+			</div>
+        </div>
+    </div>
+    </div>
+    <div class="foot">
+<ul>
+<li><a href="/information/home/webmap.html" target="_blank">网站地图</a><span>|</span></li>
+<li><a href="/information/home/webStated.html" target="_blank">网站声明</a><span>|</span></li>
+<li><a href="javascript:;" onclick="addFavorite();">添加收藏</a><span>|</span></li>
+<li><a href="/information/home/contact.html" target="_blank">联系我们</a></li>
+</ul>
+</div>
+<div class="footer">
+<div class="footer_page" style="width:990px;">
+<div style="float:left;margin-top:5px !important;">
+<img onclick="linkto_jiucuo('bm04000008')" style="margin:0;border:0;cursor: pointer;" src="/information/images/jiucuo.png">
+</div>
+<div style="float:left;width:85px;height:85px;margin-top:-5px !important;">
+<a href="http://bszs.conac.cn/sitename?method=show&amp;id=59FE0779EB534910E053022E1AAC7D54" target="_blank">
+<img id="imgConac" vspace="0" hspace="0" border="0" src="/information/images/imgConac.png" data-bd-imgshare-binded="1">
+</a>
+</div>
+<div style="float:left;margin-left:20px;">
+<p>主办：国家信息中心&nbsp;&nbsp;&nbsp;&nbsp;指导单位： 国家发展和改革委员会 </p>
+<p>网站标识码：bm04000008&nbsp;&nbsp;<a href="https://beian.miit.gov.cn/" target="_blank" style="color:#000">京ICP备05052393号-9</a>&nbsp;&nbsp;<!--<img src="/information/images/guobiao.png" width="14" height="14">--> 京公网安备11010202007733号 </p>
+<p>地址：北京西城区三里河路58号&nbsp;&nbsp;&nbsp;&nbsp;邮政编码：100045</p>
+</div>
+</div>
+</div>
+<script type="text/javascript">
+function linkto_jiucuo(site_code) {
+//获取该站点需要纠错页面的url地址
+var url = "";
+if (parent !== window) {
+try {
+url = window.top.location.href;
+} catch (e) {
+url = window.top.document.referrer;
+}
+}
+if (url.length == 0)
+url = document.location.href;
+//跳转至纠错系统填写页面
+window.open("http://121.43.68.40/exposure/jiucuo.html?site_code=" + site_code + "&url=" + encodeURIComponent(url));
+}
+function addFavorite() {
+var url = window.location;
+var title = document.title;
+var ua = navigator.userAgent.toLowerCase();
+if (ua.indexOf("360se") > -1) {
+alert("由于360浏览器功能限制，请按 Ctrl+D 手动收藏！");
+} else if (ua.indexOf("msie 8") > -1) {
+window.external.AddToFavoritesBar(url, title); //IE8
+} else if (document.all) {
+try{
+window.external.addFavorite(url, title);
+}catch(e){
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+} else if (window.sidebar) {
+window.sidebar.addPanel(title, url, "");
+} else {
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+}
+</script>
+
+</body>
+</html>
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>全国公共资源交易平台</title>
+<link type="text/css" href="/information/css/main.css" rel="stylesheet">
+<link type="text/css" href="/information/css/news.css" rel="stylesheet">
+<script src="/information/js/jquery-1.6.4.min.js"></script>
+<script src="/information/js/baseutil.js"></script>
+<script src="/information/js/current.js"></script>
+
+<script>
+
+var txtfind = '';
+
+function btnfind() {
+	if(document.getElementById("findtxt").value == '') {
+		window.location.reload();
+		return;
+	}
+	txtfind = document.getElementById("findtxt").value;
+
+	var myurl = myurl = "http://search.ggzy.gov.cn/search/s?database=policy&pageSize=20&&qt="+txtfind;
+
+	$("#ss").html("<iframe class='findIframe' frameborder='no' border='0' src='"+myurl+"' scrolling='no'></iframe>");
+
+}
+function txtsearch(e){
+    var e=e||window.event;
+    if (e.keyCode == 13) {
+    	$("#sbtn").trigger("click");
+    }
+}
+$(document).ready(function(){
+
+		$(".ul  li:nth-child(5n)").addClass("myn5line");
+		$(".ul  li:nth-child(5n)").css("background-position","12px 14px");
+		$(".ul  li:last").css("border-bottom","none");
+		cmsBeginSearch('policy');
+});
+
+</script>
+</head>
+
+<body>
+
+    <div class="header">
+<div class="header_top">
+<p class="p_fliat">
+<a href="/information/info/govreport/govreport.shtml" target="_blank">政府网站工作年度报表</a>
+</p>
+<div id="addNewSearch">
+<div class="p_last" style="margin-right:0px;"><a href="/information/serve/wechat.jsp" target="_blank"><img src="/information/images/weixin.png" id="weixin"></a></div>
+</div>
+<div id="ewm" >
+<div class="arrows"><img src="/information/images/ewm.png"></div>
+<div class="div">
+<div class="div_on"><img src="/information/images/wechatserve.jpg" width="100" height="100"><p>服务号</p></div>
+<!--     <div class="div_tw"><img src="/information/images/wechatdy.jpg" width="100" height="100"><p>订阅号</p></div> -->
+</div>
+</div>
+</div>
+</div>
+<script>
+$(function(){
+$("#weixin").hover(function(){
+$("#ewm").slideDown();
+},function(){
+var timeutId=setTimeout(function(){
+$("#ewm").slideUp();
+},100);
+$("#ewm").hover(function(){
+clearTimeout(timeutId);
+},function(){
+$(this).slideUp();
+});
+});
+});
+</script>
+<div class="banner">
+</div>
+<div class="nav_bj">
+<div class="nav">
+<ul class="nav_ul">
+<li class="nav_stair nav_first"><a href="http://www.ggzy.gov.cn">首页</a></li>
+<li class="nav_stair"><a href="/information/info/govfunc/govfunc.shtml">机构职能</a></li>
+<li class="nav_stair"><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp">交易公开</a>
+<ul class="nav_second nav_special">
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=01">工程建设</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=02">政府采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=03">土地使用权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=04">矿业权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=05">国有产权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=21">碳排放权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=22">排污权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=23">药品采购</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=24">二类疫苗</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=25">林权</a></li>
+<li><a href="http://deal.ggzy.gov.cn/ds/deal/dealList.jsp?HEADER_DEAL_TYPE=90">其他</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="/information/credit/creditList.jsp">交易诚信</a>
+<ul class="nav_second">
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=1">违法违规</a></li>
+<li><a href="/information/credit/creditList.jsp?SHOWTYPE=2">奖励信息</a></li>
+</ul>
+</li>
+<li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/companyPer.html#/home">数据服务</a></li>
+<li class="nav_stair"><a href="/information/deal/dealCollect.html">交易统计</a></li>
+<li class="nav_stair"><a href="/information/platform/platform.html">平台导航</a></li>
+<li class="nav_stair"><a href="/information/info/zcwj00/policyList.shtml">政策法规</a>
+<ul class="nav_second">
+<li><a href="/information/info/zcwj00/policyList.shtml">政策法规文件</a></li>
+<li><a href="/information/info/zcjd/policyList.shtml">政策法规解读</a></li>
+</ul>
+</li>
+<!-- <li class="nav_stair"><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>-->
+<!--     <li class="nav_stair"><a href="https://59.252.80.14/reTurnUrl" target="_blank">统一认证</a></li>-->
+<li class="nav_stair"><a href="/information/serve/service.html">服务中心</a>
+<ul class="nav_second">
+<li><a href="http://data.ggzy.gov.cn/portal_legal/cxcg/index.html" target="_blank">培训交流</a></li>
+<li><a href="/information/serve/wechat.jsp">微信订阅</a></li>
+<li><a href="/information/serve/opinion.jsp">意见建议</a></li>
+<li><a href="/information/serve/collectList.jsp">调查征集</a></li>
+<li><a href="/information/serve/regards.html">关于我们</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+    <div class="location">
+      <a href="http://www.ggzy.gov.cn">首页</a>&nbsp;&nbsp;>&nbsp;&nbsp;<a href="/info/zcwj00/policyList.shtml"  target="_self">政策法规文件</a>
+    </div>
+    <div class="news">
+    <div class="rdgz" >
+    	<div class="rdgz-left" id="ss">
+            <ul id="contextId" class="ul">
+
+
+<li><a href="/info/zcwj00/2017-09/18/content_3755277741604a9c8d6f5148197b53e7.shtml" target="_blank"  >国土资源部关于印发《矿业权交易规则》的通知</a>
+<span>2017-09-18
+</span></li>
+
+<li><a href="/info/zcwj00/2017-07/18/content_cdbc95d9e30942fd8fa859f6cdc1281c.shtml" target="_blank"  >中华人民共和国财政部令第87号--政府采购货物和服务招标投标管理办法</a>
+<span>2017-07-18
+</span></li>
+
+<li><a href="/info/zcwj00/2016-08/10/content_8b378843b3ec4032b3cbc3c995f035c1.shtml" target="_blank"  >公共资源交易平台管理暂行办法</a>
+<span>2016-08-10
+</span></li>
+
+<li><a href="/info/zcwj00/2016-07/01/content_e218cef9dd894103ab24a4d924ea55d1.shtml" target="_blank"  >国务院国资委 财政部令第32号 企业国有资产交易监督管理办法</a>
+<span>2016-07-01
+</span></li>
+
+<li><a href="/info/zcwj00/2016-04/05/content_f57de33c71fe4502b3f835bcf5c582f8.shtml" target="_blank"  >国务院办公厅关于促进医药产业健康发展的指导意见　</a>
+<span>2016-04-05
+</span></li>
+
+<li><a href="/info/zcwj00/2016-01/06/content_a79f14c16b634599bc64761f85d3b12f.shtml" target="_blank"  >国务院办公厅关于同意建立公共资源交易平台整合工作部际联席会议制度的函</a>
+<span>2016-01-06
+</span></li>
+
+<li><a href="/info/zcwj00/2015-12/17/content_a547abe8b6cb48fcae9af563e5117be6.shtml" target="_blank"  >企业国有产权转让管理暂行办法</a>
+<span>2015-12-17
+</span></li>
+
+<li><a href="/info/zcwj00/2015-12/17/content_7ae76f2e801e4400bba7ccb0767fd199.shtml" target="_blank"  >中华人民共和国拍卖法</a>
+<span>2015-12-17
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/11/content_a8e0a53e45294e11bd8e1fb7da5cb6b0.shtml" target="_blank"  >中华人民共和国企业国有资产法</a>
+<span>2015-11-11
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/11/content_48aaaff522a7488695c62b57a085099d.shtml" target="_blank"  >金融企业国有资产转让管理办法</a>
+<span>2015-11-11
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/03/content_8e69ea042f2a4d78a9026b79c3d56ebb.shtml" target="_blank"  >中华人民共和国招标投标法实施条例</a>
+<span>2015-11-03
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/03/content_7a00d02ef6544b1cb0c15297e4e75478.shtml" target="_blank"  >中华人民共和国政府采购法</a>
+<span>2015-11-03
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/03/content_363bd46985604e42be2ec51a7418f5cf.shtml" target="_blank"  >中华人民共和国政府采购法实施条例</a>
+<span>2015-11-03
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/03/content_bd90119c47ad41b5be19771e56d9d82c.shtml" target="_blank"  >中华人民共和国土地管理法</a>
+<span>2015-11-03
+</span></li>
+
+<li><a href="/info/zcwj00/2015-11/03/content_fe181fa91a4847f08e97e3c301370068.shtml" target="_blank"  >中华人民共和国土地管理法实施条例</a>
+<span>2015-11-03
+</span></li>
+
+<li><a href="/info/zcwj00/2015-08/14/content_e5b703a79ada49848010c1c7118f75ad.shtml" target="_blank"  >中华人民共和国招标投标法</a>
+<span>2015-08-14
+</span></li>
+
+<li><a href="/info/zcwj00/2015-08/14/content_9be7d7b903344c3d861d02f9055e909b.shtml" target="_blank"  >国务院办公厅关于印发整合建立统一的公共资源交易平台工作方案的通知</a>
+<span>2015-08-14
+</span></li>
+
+<script type="text/javascript" src="/info/xhtml/js/page.js"></script><script>window.onload=function() {createPageHTML('page_div',4, 4,'policyList','shtml',77);}</script>
+
+            </ul>
+
+            <div class="paging" id="page_div"></div>
+        </div>
+        <div class="rdgz-right">
+        	<div class="search">
+            	<input class="text" type="text" placeholder="请输入关键字" style="width: 260px;" name="findtxt" id="findtxt" onkeypress="txtsearch(event)">
+				<input type="button" id="sbtn" value="搜索" onclick="btnfind()" class="btn">
+            </div>
+			<div class="rdgz-right-bottom">
+				<img src="/information/images/policypic.jpg"/>
+			</div>
+        </div>
+    </div>
+    </div>
+    <div class="foot">
+<ul>
+<li><a href="/information/home/webmap.html" target="_blank">网站地图</a><span>|</span></li>
+<li><a href="/information/home/webStated.html" target="_blank">网站声明</a><span>|</span></li>
+<li><a href="javascript:;" onclick="addFavorite();">添加收藏</a><span>|</span></li>
+<li><a href="/information/home/contact.html" target="_blank">联系我们</a></li>
+</ul>
+</div>
+<div class="footer">
+<div class="footer_page" style="width:990px;">
+<div style="float:left;margin-top:5px !important;">
+<img onclick="linkto_jiucuo('bm04000008')" style="margin:0;border:0;cursor: pointer;" src="/information/images/jiucuo.png">
+</div>
+<div style="float:left;width:85px;height:85px;margin-top:-5px !important;">
+<a href="http://bszs.conac.cn/sitename?method=show&amp;id=59FE0779EB534910E053022E1AAC7D54" target="_blank">
+<img id="imgConac" vspace="0" hspace="0" border="0" src="/information/images/imgConac.png" data-bd-imgshare-binded="1">
+</a>
+</div>
+<div style="float:left;margin-left:20px;">
+<p>主办：国家信息中心&nbsp;&nbsp;&nbsp;&nbsp;指导单位： 国家发展和改革委员会 </p>
+<p>网站标识码：bm04000008&nbsp;&nbsp;<a href="https://beian.miit.gov.cn/" target="_blank" style="color:#000">京ICP备05052393号-9</a>&nbsp;&nbsp;<!--<img src="/information/images/guobiao.png" width="14" height="14">--> 京公网安备11010202007733号 </p>
+<p>地址：北京西城区三里河路58号&nbsp;&nbsp;&nbsp;&nbsp;邮政编码：100045</p>
+</div>
+</div>
+</div>
+<script type="text/javascript">
+function linkto_jiucuo(site_code) {
+//获取该站点需要纠错页面的url地址
+var url = "";
+if (parent !== window) {
+try {
+url = window.top.location.href;
+} catch (e) {
+url = window.top.document.referrer;
+}
+}
+if (url.length == 0)
+url = document.location.href;
+//跳转至纠错系统填写页面
+window.open("http://121.43.68.40/exposure/jiucuo.html?site_code=" + site_code + "&url=" + encodeURIComponent(url));
+}
+function addFavorite() {
+var url = window.location;
+var title = document.title;
+var ua = navigator.userAgent.toLowerCase();
+if (ua.indexOf("360se") > -1) {
+alert("由于360浏览器功能限制，请按 Ctrl+D 手动收藏！");
+} else if (ua.indexOf("msie 8") > -1) {
+window.external.AddToFavoritesBar(url, title); //IE8
+} else if (document.all) {
+try{
+window.external.addFavorite(url, title);
+}catch(e){
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+} else if (window.sidebar) {
+window.sidebar.addPanel(title, url, "");
+} else {
+alert("您的浏览器不支持,请按 Ctrl+D 手动收藏!");
+}
+}
+</script>
+
+</body>
+</html>
