@@ -11,7 +11,6 @@ import pythoncom
 import win32com.client
 import requests
 
-
 def to_docx(doc_bytes: bytes) -> bytes:
     """
     输入: DOC 的二进制内容（bytes）
@@ -39,12 +38,88 @@ def to_docx(doc_bytes: bytes) -> bytes:
         except Exception as e:
             print(f"Word COM 转换失败: {e}")
 
-
 def remove_blank(text: str) -> str:
     """移除空格与零宽空格。"""
     return re.sub(r"[ \u200B]+", "", text)
 
 
+# def extract_docx(file_path: str) -> List[Dict]:
+#     """
+#     解析 .docx 文件为片段列表：段落与表格。
+#
+#     返回的每个片段包含：
+#     - heading_level: int|None 标题级别（Heading 1 → 1），非标题为 None
+#     - font_size: float|None 段落字号（pt）
+#     - content: str 文本内容（表格按 Markdown 行输出）
+#     表格以 table_start → (table 行) → table_end 作为范围标记。
+#     """
+#     doc = Document(file_path)
+#     fragments: List[Dict] = []
+#
+#     for block in doc.element.body.iterchildren():
+#         if block.tag.endswith("p"):
+#             para = next((p for p in doc.paragraphs if p._element == block), None)
+#             if not para:
+#                 continue
+#
+#             style_name = para.style.name if para.style else ""
+#             heading_level = None
+#             if style_name and style_name.startswith("Heading"):
+#                 try:
+#                     heading_level = int(style_name.replace("Heading", "").strip())
+#                 except Exception:
+#                     heading_level = None
+#
+#             texts: List[str] = []
+#             font_size = None
+#             for run in para.runs:
+#                 txt = run.text.strip()
+#                 if run.font and run.font.size:
+#                     try:
+#                         font_size = run.font.size.pt
+#                     except Exception:
+#                         font_size = None
+#                 if txt:
+#                     texts.append(txt)
+#
+#             if texts:
+#                 fragments.append({
+#                     "heading_level": heading_level,
+#                     "font_size": font_size,
+#                     "content": remove_blank(" ".join(texts)),
+#                 })
+#
+#         elif block.tag.endswith("tbl"):
+#             tbl = next((t for t in doc.tables if t._element == block), None)
+#             if not tbl:
+#                 continue
+#
+#             fragments.append({"heading_level": "table_start", "font_size": None, "content": "\n"})
+#
+#             for r_idx, row in enumerate(tbl.rows):
+#                 row_texts: List[str] = []
+#                 for cell in row.cells:
+#                     cell_lines: List[str] = []
+#                     for para in cell.paragraphs:
+#                         for run in para.runs:
+#                             if run.text.strip():
+#                                 cell_lines.append(run.text.strip())
+#                     row_texts.append(re.sub(r"\|+", " ", " <br> ".join(cell_lines)))
+#
+#                 md_row = f"|{remove_blank('|'.join(row_texts))}|"
+#                 fragments.append({"heading_level": "table", "font_size": None, "content": md_row})
+#
+#                 if r_idx == 0:
+#                     cols = len(row_texts)
+#                     fragments.append({
+#                         "heading_level": "table",
+#                         "font_size": None,
+#                         "content": f"|{remove_blank('|'.join(['--------'] * cols))}|",
+#                     })
+#
+#             fragments.append({"heading_level": "table_end", "font_size": None, "content": "\n"})
+#
+#     return fragments
 def extract_docx(file_path: str = None, content: bytes = None) -> List[Dict]:
     """
     解析 .docx 文件（路径或二进制内容）为片段列表：段落与表格。
@@ -257,4 +332,3 @@ def collect_docx_files_pure(src_dir: str, dest_dir: str) -> None:
                     logger.error(f".doc 转换失败: {src} -> {target}, {e}")
 
 
-#

@@ -6,27 +6,35 @@ from spider_tools.file_utils import *
 from fake_useragent import UserAgent
 from urllib.parse import urljoin
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 # OSS初始化和文件上传
 class OSSManager:
-    def __init__(self, endpoint, bucket_name, directory):
+    def __init__(self, endpoint, bucket_name, directory, 
+                 db_config=None, oss_credentials=None):
         self.endpoint = endpoint
         self.bucket_name = bucket_name
         self.directory = directory
-        self.security_token, self.access_key_id, self.access_key_secret = self.get_oss_credentials()
-        self.bucket = self.initialize_oss_bucket(self.security_token, self.access_key_id, self.access_key_secret)
-
-    def get_oss_credentials(self):
-        # 链接
-        conn = pymysql.connect(
-            host="rm-2ze9f04i505y525i19o.mysql.rds.aliyuncs.com",
-            port=3306,
-            user="lucky2025",
-            password="80f4%d5fc",
-            db="patents",
-            charset="utf8mb4"
+        
+        # 优先使用传入的 OSS 凭证
+        if oss_credentials:
+            self.security_token = oss_credentials['security_token']
+            self.access_key_id = oss_credentials['access_key_id']
+            self.access_key_secret = oss_credentials['access_key_secret']
+        else:
+            # 从数据库获取（需要传入数据库配置）
+            if not db_config:
+                raise ValueError("必须提供 OSS 凭证或数据库配置")
+            self.security_token, self.access_key_id, self.access_key_secret = \
+                self.get_oss_credentials_from_db(db_config)
+        
+        self.bucket = self.initialize_oss_bucket(
+            self.security_token, self.access_key_id, self.access_key_secret
         )
+    def get_oss_credentials_from_db(self, db_config):
+        conn = pymysql.connect(**db_config)
         # 获取到 oss_sts 表中的的数据
         sql_select = "select security_token,access_key_id, access_key_secret from oss_sts"
         cur = conn.cursor()
@@ -84,19 +92,19 @@ class OSSManager:
     def detect_file_type(self, response, item_data):
         file_name = item_data['file_name']
         file_url = item_data['file_url']
-        file_type = start_detect_file_type(file_name=file_name)
+        file_type = start_detect_file_type(file_url=file_url,file_name=file_name)
         if not file_type:
             file_name = get_filename_from_response(response)
             file_type = start_detect_file_type(file_url=file_url, file_name=file_name)
         supported_extensions = ('zip', 'tar', 'tar.gz', 'tgz', 'tar.bz2', 'tbz2', 'rar', 'gz')
         if file_type in supported_extensions:
-            extracted_files = extract_archive(response.content, file_name)
+            extracted_files = extract_archive(response.content, file_name, file_type)
             for content, new_name in extracted_files:
                 item_data['md5_hash'] = calculate_md5(content)
                 valid_oss_filename = validate_and_fix_filename(new_name)
                 valid_oss_filename = self.get_new_name(valid_oss_filename, item_data['md5_hash'])
                 file_oss_url = self.upload_file_to_oss(content, valid_oss_filename)
-                file_new_type = self.detect_file_type(file_name=valid_oss_filename)
+                file_new_type = start_detect_file_type(file_name=valid_oss_filename)
                 file_size = len(content)
                 item_data['file_name'] = file_name
                 item_data['file_oss_name'] = valid_oss_filename
@@ -104,9 +112,11 @@ class OSSManager:
                 item_data['file_size'] = file_size
                 item_data['file_type'] = file_type
                 item_data['file_new_type'] = file_new_type
-
                 return item_data
         else:
+            name, ext = os.path.splitext(file_name)
+            if not ext:
+                file_name = file_name + "." + file_type
             valid_oss_filename = validate_and_fix_filename(file_name)
             item_data['md5_hash'] = calculate_md5(response.content)
             if file_type == 'md':
@@ -123,26 +133,20 @@ class OSSManager:
             return item_data
 
 
-    # def save_markdown(self, site_name, html, item_name, md5_hash):
-    #     """将详情页保存为markdown上传到云端"""
-    #     name = site_name + "/" + md5_hash + '-' + item_name + ".md"
-    #     new_name = validate_and_fix_filename(name)
-    #     converter = html2text.HTML2Text()  # 创建 html2text 转换器实例
-    #     converter.ignore_links = False  # 不忽略链接
-    #     # 转换 HTML 为 Markdown
-    #     markdown = converter.handle(html)
-    #     file_url = self.upload_html_to_oss(markdown, new_name)
-    #     return file_url
-    def save_markdown(self, site_name, item_name, html_content, base_url):
+
+    def save_markdown(self, site_name, item_name, html_content, base_url=None):
         """将详情页保存为markdown上传到云端"""
-        html = self.extract_and_replace_img_links(html_content, base_url)
         converter = html2text.HTML2Text()  # 创建 html2text 转换器实例
         converter.ignore_links = False  # 不忽略链接
-        # 转换 HTML 为 Markdown
-        markdown = converter.handle(html)
+        if base_url:
+            html = self.extract_and_replace_img_links(html_content, base_url)
+            markdown = converter.handle(html)
+        else:
+            markdown = converter.handle(html_content)
         md5_hash = calculate_md5(markdown)
-        name = site_name + "/" + item_name + "_" +md5_hash + ".md"
-        new_name = validate_and_fix_filename(name)
+        # name = site_name + "/" + item_name + "_" +md5_hash + ".md"
+        # name = validate_and_fix_filename(name)
+        new_name = site_name + "/" + md5_hash + ".md"
         file_url = self.upload_html_to_oss(markdown, new_name)
         return file_url
 
@@ -168,7 +172,7 @@ class OSSManager:
         item_data = self.detect_file_type(response, item_data)
         return item_data
 
-    @retry(max_retries=8, retry_delay=5)
+    @retry(max_retries=1, retry_delay=1)
     def get_response(self, url):
         # headers = {
         #     'Connection': 'keep-alive',

@@ -81,9 +81,6 @@ class DatabasePool:
                             self.logger.warning(f"{operation} fail【{table} -> {value} 数据存在！")
                         except Exception as e:
                             print(e)
-                            # print("table", table)
-                            # print("sql", sql)
-                            # print("values", values)
                             conn.rollback()
                             self.logger.error(f"{operation} failed: {e} for {value}")
 
@@ -104,9 +101,6 @@ class DatabasePool:
                             query_result = rows_as_dict
                             return query_result
                     except Exception as e:
-                        # print("table", table)
-                        # print("sql", sql)
-                        # print("values", values)
                         self.logger.error(f"{operation} failed: {e} for {values}")
 
                 else:
@@ -115,17 +109,11 @@ class DatabasePool:
                     conn.commit()
 
         except cursor.IntegrityError as err:
-            # print("table", table)
-            # print("sql", sql)
-            # print("values", values)
             # 这里捕获到的是与数据完整性相关的错误，比如唯一约束被违反
             # self.logger.warning(f"Skipping due to unique constraint violation:{err}")
             pass
 
         except Exception as e:
-            # print("table", table)
-            # print("sql", sql)
-            # print("values", values)
             conn.rollback()
             self.logger.error(f"Database operation failed:{e}")
 
@@ -334,7 +322,6 @@ class DatabasePool:
     def query_table_data_value_count(self, table, search_value):
         sql = f"SELECT COUNT(*) FROM {table} WHERE id LIKE '%{search_value}%';"
         query_result = self.execute_many_or_loop(table, sql, list(), operation='query')
-        # print(query_result)
         if query_result:
             data = list(query_result[0].values())[0]
         else:

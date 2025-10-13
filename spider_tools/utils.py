@@ -1,4 +1,3 @@
-import base64
 import json
 from loguru import logger
 import time
@@ -26,10 +25,6 @@ def retry(max_retries=8, retry_delay=5):
         return wrapper
     return decorator
 
-
-def to_bs64(self, s):
-    """将字符串转换为Base64编码（简化版）"""
-    return base64.b64encode(s.encode('utf-8')).decode('utf-8')
 
 # def calculate_md5(data):
 #     """计算数据的 MD5 哈希值"""
@@ -77,8 +72,10 @@ def calculate_md5(data):
     """计算数据的 MD5 哈希值，支持 bytes、str、dict 类型"""
     try:
         md5_hash = hashlib.md5()
+
         if isinstance(data, bytes):
             md5_hash.update(data)
+
         elif isinstance(data, str):
             # 字符串统一按 utf-8 编码为 bytes
             md5_hash.update(data.encode('utf-8'))
@@ -97,6 +94,7 @@ def calculate_md5(data):
                         return sorted(list(obj))
                     # 其他不可序列化类型，明确报错
                     return super().default(obj)
+
             # 序列化字典：排序键 + 统一编码处理 + 严格控制特殊类型
             data_str = json.dumps(
                 data,
@@ -106,11 +104,14 @@ def calculate_md5(data):
                 separators=(',', ':')  # 去除空格，减少冗余字符影响
             )
             md5_hash.update(data_str.encode('utf-8'))
+
         else:
             # 不支持的类型，记录日志并报错
             logger.error(f"不支持的数据类型: {type(data)}，数据: {str(data)[:100]}")  # 限制日志长度
             raise ValueError(f"不支持的数据类型: {type(data)}，仅支持 bytes、str、dict")
+
         return md5_hash.hexdigest()
+
     # 捕获特定异常，避免掩盖关键错误
     except TypeError as e:
         logger.error(f"数据序列化失败（可能包含不可处理的类型）: {e}，数据: {str(data)[:100]}")

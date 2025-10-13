@@ -74,14 +74,15 @@ class BaseProcessor:
             )
             return self.dataset
 
-    @retry(max_retries=4, retry_delay=1)
-    def upload_files(self, all_files_info):
-        """批量上传所有文件，仅调用一次upload_documents"""
-        self.dataset = self.get_or_create_dataset()
-        doc_list = self.dataset.upload_documents(all_files_info)
-        doc_ids = [doc.id for doc in doc_list]
-        self.dataset.async_parse_documents(doc_ids)
-        logger.info(f"成功批量上传并触发解析 {len(doc_ids)} 个文件")
+    def get_all_datasets(self):
+        return self.rag_object.list_datasets()
+
+    def delete_all_files(self, dataset):
+        """
+        删除一个知识库下所有的文件
+        要删除的文档的 ID。如果未指定，则数据集中的所有文档都将被删除。None
+        """
+        dataset.delete_documents()
 
 
     def delete_files_by_status(self, dataset, status):
@@ -96,11 +97,19 @@ class BaseProcessor:
                 if doc.status == status:
                     dataset.delete_documents([doc.id])
 
+    # def delete_repeat_files(self, dataset):
+    #     """删除重复文件"""
+    #     for page in range(1, dataset.document_count // 30 + 30):
+    #         documents = dataset.list_documents(page=page)
+    #         for doc in documents:
+    #             if '(' in doc.name:
+    #                 dataset.delete_documents([doc.id])
 
     def delete_repeat_files(self, dataset):
         """批量删除名称中包含'('的重复文件"""
         batch_size = 100  # 每批删除的ID数量（可根据API限制调整）
         delete_ids = []  # 存储待删除的文档ID
+
         # 分页获取所有文档，收集需删除的ID
         page = 1
         while True:
