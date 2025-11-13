@@ -1,3 +1,4 @@
+import subprocess
 import time
 from urllib.parse import urlparse
 import html2text
@@ -22,7 +23,9 @@ import os
 import pandas as pd
 from loguru import logger
 import uuid
-
+import os
+import pandas as pd
+import io
 from pathvalidate import sanitize_filename
 from pathvalidate.handler import ReservedNameHandler
 
@@ -328,7 +331,6 @@ def set_unrar_path():
     # 获取当前文件所在目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     unrar_path = os.path.join(current_dir, "UnRAR.exe")
-
     # 检查UnRAR.exe是否存在
     if os.path.exists(unrar_path):
         rarfile.UNRAR_TOOL = unrar_path
@@ -368,9 +370,6 @@ def extract_and_clean_title(title):
         cleaned_title = title.replace("\n", "").replace("\t", "").replace("\r", "").replace(" ", "")
         return cleaned_title
     return ""
-
-
-
 
 
 def split_excel_by_rows(input_path, output_dir, rows_per_file=200):
@@ -504,153 +503,52 @@ def split_file_by_rows(input_path, rows_per_file=200):
     return result
 
 
-import os
-import pandas as pd
-import io
-
-
-# def split_data_by_rows(data, rows_per_file=200, source_ext='.xlsx', title_prefix=None):
-#     """
-#     拆分数据库查询结果（DataFrame或列表）为多个数据块
-#
-#     参数:
-#     data: 数据库查询结果（支持DataFrame或列表 of dict）
-#     rows_per_file (int): 每个数据块的行数
-#     source_ext (str): 生成标题的文件扩展名（默认.xlsx）
-#     title_prefix (str): 输出文件的标题前缀（默认使用'database_data'）
-#
-#     返回:
-#     list: 包含字典的列表，每个字典含'title'（数据块标题）和'content'（DataFrame）
-#     """
-#     # 统一转换为DataFrame
-#     if not isinstance(data, pd.DataFrame):
-#         try:
-#             data = pd.DataFrame(data)
-#         except Exception as e:
-#             raise ValueError(f"无法将数据转换为DataFrame: {e}")
-#
-#     result = []
-#     total_rows = len(data)
-#     total_parts = (total_rows + rows_per_file - 1) // rows_per_file
-#
-#     # 使用用户指定的标题前缀或默认值
-#     file_base = title_prefix if title_prefix else "database_data"
-#
-#     for part in range(total_parts):
-#         start_row = part * rows_per_file
-#         end_row = min((part + 1) * rows_per_file, total_rows)
-#         sub_df = data.iloc[start_row:end_row, :]
-#
-#         title = f"{file_base}_{part + 1}{source_ext}"
-#         result.append({
-#             'title': title,
-#             'content': sub_df
-#         })
-#
-#     logger.info(f"数据拆分完成！共生成{len(result)}个数据块")
-#     return result
-
-# def split_data_by_rows(data, rows_per_file=200, source_ext='.xlsx', title_prefix=None):
-#     """
-#     拆分数据库查询结果（DataFrame或列表）为多个数据块，文件名包含UUID确保唯一
-#
-#     参数:
-#     data: 数据库查询结果（支持DataFrame或列表 of dict）
-#     rows_per_file (int): 每个数据块的行数
-#     source_ext (str): 生成标题的文件扩展名（默认.xlsx）
-#     title_prefix (str): 输出文件的标题前缀（默认使用'database_data'）
-#
-#     返回:
-#     list: 包含字典的列表，每个字典含'title'（数据块标题）和'content'（DataFrame）
-#     """
-#     # 统一转换为DataFrame
-#     if not isinstance(data, pd.DataFrame):
-#         try:
-#             data = pd.DataFrame(data)
-#         except Exception as e:
-#             raise ValueError(f"无法将数据转换为DataFrame: {e}")
-#
-#     result = []
-#     total_rows = len(data)
-#     total_parts = (total_rows + rows_per_file - 1) // rows_per_file  # 计算总分片数
-#
-#     # 生成UUID（取前8位简化，确保唯一性同时避免文件名过长）
-#     # unique_uuid = str(uuid.uuid4()).split('-')[0]  # 例如：'a1b2c3d4'
-#
-#
-#     # 确定文件基础前缀
-#     file_base = title_prefix if title_prefix else "database_data"
-#
-#
-#     for part in range(total_parts):
-#         unique_uuid = str(uuid.uuid4()).replace('-', '')
-#         # 拼接UUID作为唯一标识（格式：前缀_UUID）
-#         base_with_uuid = f"{file_base}_{unique_uuid}"
-#         start_row = part * rows_per_file
-#         end_row = min((part + 1) * rows_per_file, total_rows)
-#         sub_df = data.iloc[start_row:end_row, :]
-#
-#         # 生成文件名（格式：前缀_UUID_分片序号.扩展名）
-#         title = f"{base_with_uuid}{source_ext}"
-#         result.append({
-#             'title': title,
-#             'content': sub_df
-#         })
-#
-#     # logger.info(f"数据拆分完成！共生成{len(result)}个数据块，UUID标识：{unique_uuid}")
-#     return result
-
-
-def split_data_by_rows(data, rows_per_file=200, source_ext='.xlsx', title_prefix=None, sheet_name=None):
+def split_data_by_rows(
+        data,
+        rows_per_file=200,
+        source_ext='.xlsx',
+        title_prefix=None,
+        sheet_name=None,
+        id_column=None,
+        include_id_column=True
+):
     """
-    拆分数据（支持数据库查询结果、Excel文件数据）为多个数据块
-
-    参数:
-    data: 输入数据，支持：
-          - 数据库查询结果（list of dict 或 pd.DataFrame）
-          - Excel读取结果（pd.read_excel(sheet_name=None)返回的字典）
-    rows_per_file (int): 每个数据块的行数
-    source_ext (str): 生成标题的文件扩展名
-    title_prefix (str): 输出文件的标题前缀
-    sheet_name (str/int, 可选): 当data是Excel字典时，指定要处理的工作表名/索引
-                               不指定则默认处理第一个工作表
-
+    功能: 拆分数据，且在每个拆分结果中附带该文件内原始记录的映射关系
+    参数新增:
+    include_id_column (bool, 可选): 是否在输出的content中包含id_column列，默认True（包含）
     返回:
-    list: 包含字典的列表，每个字典含'title'和'content'（DataFrame）
+    list: 每个元素含'title'（文件名）、'content'（拆分后DataFrame）、'record'（id列表）
     """
-    # 1. 处理Excel返回的字典（键为工作表名，值为DataFrame）
+    # 1. 原有Excel输入处理逻辑不变
     if isinstance(data, dict):
-        # 检查是否是Excel工作表字典（所有值都是DataFrame）
         if all(isinstance(v, pd.DataFrame) for v in data.values()):
-            # 确定要处理的工作表
             if sheet_name is not None:
-                # 按指定工作表名/索引提取
                 if isinstance(sheet_name, int):
-                    # 按索引取（如0表示第一个工作表）
                     sheet_names = list(data.keys())
                     target_sheet = sheet_names[sheet_name] if sheet_name < len(sheet_names) else None
                 else:
-                    # 按名称取
                     target_sheet = sheet_name
                 if target_sheet not in data:
                     raise ValueError(f"Excel中不存在工作表: {sheet_name}")
                 data = data[target_sheet]
             else:
-                # 默认取第一个工作表
                 data = next(iter(data.values()))
-
-    # 2. 统一转换为DataFrame（处理数据库返回的list of dict）
     if not isinstance(data, pd.DataFrame):
         try:
             data = pd.DataFrame(data)
         except Exception as e:
             raise ValueError(f"无法将数据转换为DataFrame: {e}")
 
-    # 3. 处理空数据
     if data.empty:
         return []
-
-    # 4. 拆分数据
+    identifiers = []
+    if id_column is not None:
+        if id_column not in data.columns:
+            raise ValueError(f"原始数据中不存在标识字段: {id_column}")
+        identifiers = data[id_column].tolist()  # 提取id列表用于record
+    else:
+        identifiers = data.index.tolist()
+    # 4. 拆分数据 + 按参数控制是否保留id_column列
     result = []
     total_rows = len(data)
     total_parts = (total_rows + rows_per_file - 1) // rows_per_file
@@ -658,18 +556,90 @@ def split_data_by_rows(data, rows_per_file=200, source_ext='.xlsx', title_prefix
 
     for part in range(total_parts):
         unique_uuid = str(uuid.uuid4()).replace('-', '')
-        base_with_uuid = f"{file_base}_{unique_uuid}"
+        title = f"{file_base}_{unique_uuid}{source_ext}"
         start_row = part * rows_per_file
         end_row = min((part + 1) * rows_per_file, total_rows)
-        sub_df = data.iloc[start_row:end_row, :]
-
-        title = f"{base_with_uuid}{source_ext}"
+        sub_df = data.iloc[start_row:end_row, :].copy()  # 复制避免修改原数据
+        if not include_id_column and id_column is not None and id_column in sub_df.columns:
+            sub_df = sub_df.drop(columns=[id_column])
+        current_ids = identifiers[start_row:end_row]
         result.append({
             'title': title,
-            'content': sub_df
+            'content': sub_df,
+            'record': current_ids
         })
-
     return result
+
+
+# def split_data_by_rows(data, rows_per_file=200, source_ext='.xlsx', title_prefix=None, sheet_name=None):
+#     """
+#     拆分数据（支持数据库查询结果、Excel文件数据）为多个数据块
+#
+#     参数:
+#     data: 输入数据，支持：
+#           - 数据库查询结果（list of dict 或 pd.DataFrame）
+#           - Excel读取结果（pd.read_excel(sheet_name=None)返回的字典）
+#     rows_per_file (int): 每个数据块的行数
+#     source_ext (str): 生成标题的文件扩展名
+#     title_prefix (str): 输出文件的标题前缀
+#     sheet_name (str/int, 可选): 当data是Excel字典时，指定要处理的工作表名/索引
+#                                不指定则默认处理第一个工作表
+#
+#     返回:
+#     list: 包含字典的列表，每个字典含'title'和'content'（DataFrame）
+#     """
+#     # 1. 处理Excel返回的字典（键为工作表名，值为DataFrame）
+#     if isinstance(data, dict):
+#         # 检查是否是Excel工作表字典（所有值都是DataFrame）
+#         if all(isinstance(v, pd.DataFrame) for v in data.values()):
+#             # 确定要处理的工作表
+#             if sheet_name is not None:
+#                 # 按指定工作表名/索引提取
+#                 if isinstance(sheet_name, int):
+#                     # 按索引取（如0表示第一个工作表）
+#                     sheet_names = list(data.keys())
+#                     target_sheet = sheet_names[sheet_name] if sheet_name < len(sheet_names) else None
+#                 else:
+#                     # 按名称取
+#                     target_sheet = sheet_name
+#                 if target_sheet not in data:
+#                     raise ValueError(f"Excel中不存在工作表: {sheet_name}")
+#                 data = data[target_sheet]
+#             else:
+#                 # 默认取第一个工作表
+#                 data = next(iter(data.values()))
+#
+#     # 2. 统一转换为DataFrame（处理数据库返回的list of dict）
+#     if not isinstance(data, pd.DataFrame):
+#         try:
+#             data = pd.DataFrame(data)
+#         except Exception as e:
+#             raise ValueError(f"无法将数据转换为DataFrame: {e}")
+#
+#     # 3. 处理空数据
+#     if data.empty:
+#         return []
+#
+#     # 4. 拆分数据
+#     result = []
+#     total_rows = len(data)
+#     total_parts = (total_rows + rows_per_file - 1) // rows_per_file
+#     file_base = title_prefix if title_prefix else "database_data"
+#
+#     for part in range(total_parts):
+#         unique_uuid = str(uuid.uuid4()).replace('-', '')
+#         base_with_uuid = f"{file_base}_{unique_uuid}"
+#         start_row = part * rows_per_file
+#         end_row = min((part + 1) * rows_per_file, total_rows)
+#         sub_df = data.iloc[start_row:end_row, :]
+#
+#         title = f"{base_with_uuid}{source_ext}"
+#         result.append({
+#             'title': title,
+#             'content': sub_df
+#         })
+#
+#     return result
 
 
 def split_file_by_rows_return_bytes(input_path, rows_per_file=200, file_format='xlsx'):

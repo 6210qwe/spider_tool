@@ -1,3 +1,4 @@
+import base64
 import os
 import time
 import requests
@@ -12,15 +13,18 @@ from spider_tools.file_download import FileDownloader
 import threading
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import logging
-
+from encrypt_util import rsa_encrypt
+# ragflow-sdk 常用操作
+# 获取所有的知识库 self.rag_object.list_datasets()
+# 删除一个知识库下所有的文件, 要删除的文档的 ID。如果未指定，则数据集中的所有文档都将被删除。None  self.dataset.delete_documents()
 class BaseProcessor:
-    def __init__(self, dataset_name, description,ragflow_config=None):
+    def __init__(self, dataset_name, description,ragflow_config=None, user_info=None):
         self.ragflow_config = ragflow_config or {}
         if not self.ragflow_config.get('api_key'):
             raise ValueError("缺少RAGFlow API密钥配置")
         if not self.ragflow_config.get('base_url'):
             raise ValueError("缺少RAGFlow基础URL配置")
+        self.user_info = user_info or {}
         self.rag_object = RAGFlow(
             api_key=self.ragflow_config['api_key'],
             base_url=self.ragflow_config['base_url']
@@ -51,10 +55,60 @@ class BaseProcessor:
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
             'cookie': f'session={self.ragflow_config.get("session_cookie", "")}',
         }
+    # 获取账号token授权用于后续操作
+    def get_authorization(self):
+        headers = {
+            'accept': 'application/json',
+            'accept-language': 'zh-CN,zh;q=0.9',
+            'authorization': '',
+            'cache-control': 'no-cache',
+            'client': 'pc',
+            'content-type': 'application/json;charset=UTF-8',
+            'origin': self.base_url,
+            'pragma': 'no-cache',
+            'priority': 'u=1, i',
+            'referer': f'{self.base_url}/login',
+            'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'timestamp': str(int(time.time() * 1000)),
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+        }
+        public_key_pem = """ -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArq9XTUSeYr2+N1h3Afl/
+        z8Dse/2yD0ZGrKwx+EEEcdsBLca9Ynmx3nIB5obmLlSfmskLpBo0UACBmB5rEjBp
+        2Q2f3AG3Hjd4B+gNCG6BDaawuDlgANIhGnaTLrIqWrrcm4EMzJOnAOI1fgzJRsOO
+        UEfaS318Eq9OVO3apEyCCt0lOQK6PuksduOjVxtltDav+guVAA068NrPYmRNabVK
+        RNLJpL8w4D44sfth5RvZ3q9t+6RTArpEtc5sh5ChzvqPOzKGMXW83C95TxmXqpbK
+        6olN4RevSfVjEAgCydH6HN6OhtOQEcnrU97r9H0iZOWwbw3pVrZiUkuRD1R56Wzs
+        2wIDAQAB
+        -----END PUBLIC KEY-----"""
+        # 明文（需要加密的内容）
+        plaintext = base64.b64encode(self.user_info['password'].encode('utf-8')).decode('utf-8')
+        # 执行加密
+        ciphertext = rsa_encrypt(public_key_pem, plaintext)
+        # logger.info(f"明文：{plaintext}")
+        # logger.info(f"密文（十六进制）：{ciphertext}")
+        bytes_ciphertext = bytes.fromhex(ciphertext)  # 先转回字节
+        b64_ciphertext = base64.b64encode(bytes_ciphertext).decode("utf-8")
+        json_data = {
+            'email': self.user_info['email'],
+            'mobile': '',
+            'password': b64_ciphertext,
+            'login_type': 'email',
+            'login_type_key': 'password',
+        }
+        response = requests.post(f'{self.base_url}/v1/user/login', headers=headers, json=json_data)
+        authorization = response.json()['data']['authorization']
+        return authorization
 
+    # 获取数据集对象
     def get_or_create_dataset(self) -> DataSet:
         """
-        创建或获取数据集
+        创建数据集, 如果没有则直接创建
         :return: 数据集对象
         """
         try:
@@ -74,15 +128,117 @@ class BaseProcessor:
             )
             return self.dataset
 
-    def get_all_datasets(self):
-        return self.rag_object.list_datasets()
+    # 批量上传文件
+    def upload_files(self,dataset, files):
+        """批量上传所有文件，仅调用一次upload_documents"""
+        doc_list = dataset.upload_documents(files)
+        doc_ids = [doc.id for doc in doc_list]
+        logger.info(f"成功批量上传{len(doc_ids)} 个文件")
+        return doc_list
 
-    def delete_all_files(self, dataset):
+    # 文件解析--因为没有未解析文件的查询接口, 需要遍历整个知识库
+    # 因为服务器解析性能问题, 需要控制解析文件的数量, 要不然会在队列钟卡住
+    # 控制文件数量, 需要定时获取解析文件的状态
+    # def reprocess_all_files(self, dataset, time_sleep=10):
+    #     parse_lock = threading.Lock()
+    #     page_size = 100
+    #     total_docs = dataset.document_count
+    #     logger.info("一共{}页".format(total_docs))
+    #     if total_docs == 0:
+    #         logger.info("无文档可处理")
+    #         return
+    #     total_pages = math.ceil(total_docs / page_size)
+    #     # 3. 单页处理函数（多线程遍历，解析时加锁串行）
+    #     def process_page(page):
+    #         try:
+    #             # 3.1 多线程并行拉取分页文档（遍历加速）
+    #             documents = self.dataset.list_documents(page=page, page_size=page_size)
+    #             if not documents:
+    #                 return
+    #             # 3.2 遍历当前页文档（保持原有筛选逻辑）
+    #             for doc in documents:
+    #                 if doc.name.lower().endswith('.doc'):
+    #                     continue
+    #                 if doc.run in ["UNSTART", "CANCEL"]:
+    #                     # 核心：通过锁强制解析串行化（同一时间仅1个文档解析）
+    #                     with parse_lock:  # 所有线程竞争这把锁，只有拿到锁的才能执行以下代码
+    #                         self.dataset.async_parse_documents([doc.id])
+    #                         logger.info(f"解析{doc.name}")
+    #                         time.sleep(time_sleep)  # 串行等待，和原代码行为一致
+    #         except Exception as e:
+    #             logger.error(f"第{page}页处理出错: {str(e)}")
+    #     with ThreadPoolExecutor(max_workers=10) as executor:
+    #         futures = [executor.submit(process_page, page) for page in range(1, total_pages + 1)]
+    #         for future in as_completed(futures):
+    #             pass
+    #     logger.info("所有文档遍历完成")
+
+    # 后续直接使用/v1/document/ids/list接口, 通过状态为2进行查询,run为3是已经解析成功, run为2是已经取消状态, run为1是正在解析中, 0为未解析
+    def reprocess_all_files(self, dataset, time_sleep=10):
+        parse_lock = threading.Lock()
+        page_size = 100
+        total = self.get_pages(dataset.id, status=0)
+        logger.info("一共{}未解析文档".format(total))
+        if total == 0:
+            logger.info("无文档可处理")
+            return
+        total_pages = math.ceil(total / page_size)
+        # 3. 单页处理函数（多线程遍历，解析时加锁串行）
+        def process_page(page):
+            try:
+                # 3.1 多线程并行拉取分页文档（遍历加速）
+                documents = self.dataset.list_documents(page=page, page_size=page_size)
+                if not documents:
+                    return
+                # 3.2 遍历当前页文档（保持原有筛选逻辑）
+                for doc in documents:
+                    if doc.name.lower().endswith('.doc'):
+                        continue
+                    if doc.run in ["UNSTART", "CANCEL"]:
+                        # 核心：通过锁强制解析串行化（同一时间仅1个文档解析）
+                        with parse_lock:  # 所有线程竞争这把锁，只有拿到锁的才能执行以下代码
+                            self.dataset.async_parse_documents([doc.id])
+                            logger.info(f"解析{doc.name}")
+                            time.sleep(time_sleep)  # 串行等待，和原代码行为一致
+            except Exception as e:
+                logger.error(f"第{page}页处理出错: {str(e)}")
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(process_page, page) for page in range(1, total_pages + 1)]
+            for future in as_completed(futures):
+                pass
+        logger.info("所有文档遍历完成")
+
+    def get_pages(self, kb_id, status, page=10):
         """
-        删除一个知识库下所有的文件
-        要删除的文档的 ID。如果未指定，则数据集中的所有文档都将被删除。None
+        获取所有文件分页
+        :return: 所有文件分页
         """
-        dataset.delete_documents()
+        params = {
+            'kb_id': kb_id,
+            'keywords': '',
+            'page_size': '100',
+            'page': str(page),
+            'run_status': status
+        }
+        json_data = {}
+        response = requests.post('https://www.yutubang.com/v1/document/ids/list', params=params, headers=self.headers,json=json_data).json()
+        return response['data']['total']
+
+
+    # 所有文件停止解析--遍历整个知识库, 获取所有文档,并停止解析
+    def cancel_all_files(self, dataset):
+        """
+        批量停止解析文件
+        :param dataset: 数据集对象
+        """
+        for page in range(1, dataset.document_count // 30 + 30):
+            documents = dataset.list_documents(page=page)
+            for doc in documents:
+                if doc.status == 'parsing':
+                    dataset.cancel_document(doc.id)
+
+    # 对已经解析的文档进行分块处理
+
 
 
     def delete_files_by_status(self, dataset, status):
@@ -109,7 +265,6 @@ class BaseProcessor:
         """批量删除名称中包含'('的重复文件"""
         batch_size = 100  # 每批删除的ID数量（可根据API限制调整）
         delete_ids = []  # 存储待删除的文档ID
-
         # 分页获取所有文档，收集需删除的ID
         page = 1
         while True:
@@ -162,40 +317,6 @@ class BaseProcessor:
             documents = self.dataset.list_documents(page=page)
             for doc in documents:
                 logger.info(f'{doc.run}, {doc.name}')
-    # 全部重新解析
-    def reprocess_all_files(self, dataset, time_sleep=10):
-        parse_lock = threading.Lock()
-        page_size = 100
-        total_docs = dataset.document_count
-        logger.info("一共{}页".format(total_docs))
-        if total_docs == 0:
-            logger.info("无文档可处理")
-            return
-        total_pages = math.ceil(total_docs / page_size)
-        # 3. 单页处理函数（多线程遍历，解析时加锁串行）
-        def process_page(page):
-            try:
-                # 3.1 多线程并行拉取分页文档（遍历加速）
-                documents = self.dataset.list_documents(page=page, page_size=page_size)
-                if not documents:
-                    return
-                # 3.2 遍历当前页文档（保持原有筛选逻辑）
-                for doc in documents:
-                    if doc.name.lower().endswith('.doc'):
-                        continue
-                    if doc.run in ["UNSTART", "CANCEL"]:
-                        # 核心：通过锁强制解析串行化（同一时间仅1个文档解析）
-                        with parse_lock:  # 所有线程竞争这把锁，只有拿到锁的才能执行以下代码
-                            self.dataset.async_parse_documents([doc.id])
-                            logger.info(f"解析{doc.name}")
-                            time.sleep(time_sleep)  # 串行等待，和原代码行为一致
-            except Exception as e:
-                logger.error(f"第{page}页处理出错: {str(e)}")
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(process_page, page) for page in range(1, total_pages + 1)]
-            for future in as_completed(futures):
-                pass
-        logger.info("所有文档遍历完成")
 
 
     # def reprocess_all_files(self, dataset, time_sleep=10):
@@ -437,40 +558,7 @@ class BaseProcessor:
                     print('响应内容:', response.text)
                     self.delete_documents([doc.id])
 
-    def get_authorization(self):
-        import requests
-        headers = {
-            'accept': 'application/json',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'authorization': '',
-            'cache-control': 'no-cache',
-            'client': 'pc',
-            'content-type': 'application/json;charset=UTF-8',
-            'origin': self.base_url,
-            'pragma': 'no-cache',
-            'priority': 'u=1, i',
-            'referer': f'{self.base_url}/login',
-            'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'timestamp': str(int(time.time() * 1000)),
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-        }
 
-        json_data = {
-            'email': '',
-            'mobile': '15717696627',
-            'password': 'O7SfiiQi5vfCpftOmj2wHcSVa7R+6yprwmmkYcF5usZIZ2Cu+HBl0eAhvwlrLNtED0v1xQCgaaCpkGkEVo89jo9Jz24ntTc+foEEklQlMglk+jwrhIM8W+CxhnVAEUYV2x6VjL1oO63+30/bZjOszSMmrr+te86MGEFBzvUkOGr43lhQ8ctGVC6sbP3vLHZL6dNLwka7soQCu+6d1mDwFw8Otf+0whG5UN2ljdRf/p322b+qT5vgzgjGaUMzciS5DI6NHZ5f2qeSSS6fhafBK9FeVOpjYvITv8AOPkWC+h7JTx6fqJEWNjF4cPVLR8qD5ie/rHXJLUhxHVgcH05NYg==',
-            'login_type': 'mobile',
-            'login_type_key': 'password',
-        }
-
-        response = requests.post(f'{self.base_url}/v1/user/login', headers=headers, json=json_data)
-        authorization = response.json()['data']['authorization']
-        return authorization
 
 
 

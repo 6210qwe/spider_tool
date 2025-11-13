@@ -1,60 +1,82 @@
+# -*- coding:utf-8 -*-
+"""
+@Author   : MindLullaby
+@Website  : https://pypi.org/project/spider-tools-pro/
+@Copyright: (c) 2020 by g1879, Inc. All Rights Reserved.
+"""
+
 from setuptools import setup, find_packages
 import os
 import sys
+__version__ = '0.0.0.15'
 
 
 setup(
-    name="spider_tool",
-    version="0.0.1",
+    name="spider-tools-pro",
+    version=__version__,
     author="MindLullaby",
-    author_email="3203939025@qq.com",
     description="A professional spider tools package",
-    url="https://github.com/6210qwe/spider_tool",
-    packages=find_packages(include=['spider_tool', 'spider_tool.*']),
+    license="MIT",
+    packages=find_packages(include=['spider_tools', 'spider_tools.*']),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Natural Language :: Chinese (Simplified)",
         "Framework :: Pytest",
     ],
-    python_requires=">=3.10",
     install_requires=[
-        "requests>=2.31.0",
-        "lxml>=4.9.0",
-        "loguru>=0.7.2",
-        "urllib3>=2.0.7",
-        "curl_cffi>=0.6.0",
-        "aiomysql>=0.2.0",
-        "aiohttp>=3.9.1",
-        "click>=8.1.7",
+        "requests",
+        "lxml",
+        "loguru",
+        "urllib3",
+        "curl_cffi",
+        "aiomysql",
+        "aiohttp",
+        "click",
+        "html2text",
+        "oss2",
+        "pymysql",
+        "DBUtils",
+        "beautifulsoup4",
+        "fake-useragent",
+        "rarfile",
+        "pandas",
+        "ftfy",
+        "redis",
+        "ragflow-sdk",
+        "python-magic; platform_system!='Windows'",
+        "python-magic-bin; platform_system=='Windows'",
+        "python-docx",
+        "pywin32; platform_system=='Windows'",
+        "comtypes; platform_system=='Windows'",
     ],
     extras_require={
         'dev': [
-            'pytest>=7.4.0',
-            'pytest-cov>=4.1.0',
-            'black>=23.7.0',
-            'isort>=5.12.0',
-            'flake8>=6.1.0',
-            'mypy>=1.5.1',
+            'pytest',
+            'pytest-cov',
+            'black',
+            'isort',
+            'flake8',
+            'mypy',
         ],
         'docs': [
-            'sphinx>=7.1.0',
-            'sphinx-rtd-theme>=1.3.0',
+            'sphinx',
+            'sphinx-rtd-theme',
         ],
     },
     entry_points={
         'console_scripts': [
-            'spider_tool=spider_tool.cli:main',
+            'spider-tools-pro=spider_tools.cli:main',
         ],
     },
     include_package_data=True,
     package_data={
-        'spider_tool': ['py.typed'],
+        'spider_tools': ['py.typed'],
     },
 )
