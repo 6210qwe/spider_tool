@@ -103,6 +103,7 @@ class BaseProcessor:
         }
         response = requests.post(f'{self.base_url}/v1/user/login', headers=headers, json=json_data)
         authorization = response.json()['data']['authorization']
+        logger.info(f"获取账号token授权成功：{authorization}")
         return authorization
 
     # 获取数据集对象
@@ -129,7 +130,7 @@ class BaseProcessor:
             return self.dataset
 
     # 批量上传文件
-    def upload_files(self,dataset, files):
+    def upload_files(self, dataset, files):
         """批量上传所有文件，仅调用一次upload_documents"""
         doc_list = dataset.upload_documents(files)
         doc_ids = [doc.id for doc in doc_list]
@@ -177,37 +178,76 @@ class BaseProcessor:
     def reprocess_all_files(self, dataset, time_sleep=10):
         parse_lock = threading.Lock()
         page_size = 100
-        total = self.get_pages(dataset.id, status=0)
+        total = self.get_pages(dataset.id, status=0)['data']['total']
         logger.info("一共{}未解析文档".format(total))
+        total_cancel= self.get_pages(dataset.id, status=2)['data']['total']
+        logger.info("一共{}个取消文档".format(total_cancel))
         if total == 0:
             logger.info("无文档可处理")
             return
         total_pages = math.ceil(total / page_size)
-        # 3. 单页处理函数（多线程遍历，解析时加锁串行）
-        def process_page(page):
+        running_count = self.get_pages(dataset.id, status=1)['data']['total']  # 当前解析文件的数量
+        logger.info("当前解析文件数量为{}".format(running_count))
+        max_parse_count = 8
+        check_interval = 20
+        last_monitor_time = 0
+        flag = True
+        while flag:
             try:
-                # 3.1 多线程并行拉取分页文档（遍历加速）
-                documents = self.dataset.list_documents(page=page, page_size=page_size)
-                if not documents:
-                    return
-                # 3.2 遍历当前页文档（保持原有筛选逻辑）
-                for doc in documents:
-                    if doc.name.lower().endswith('.doc'):
-                        continue
-                    if doc.run in ["UNSTART", "CANCEL"]:
-                        # 核心：通过锁强制解析串行化（同一时间仅1个文档解析）
-                        with parse_lock:  # 所有线程竞争这把锁，只有拿到锁的才能执行以下代码
-                            self.dataset.async_parse_documents([doc.id])
-                            logger.info(f"解析{doc.name}")
-                            time.sleep(time_sleep)  # 串行等待，和原代码行为一致
+                # 单个文档进行解析, 每隔20秒查询队列中的数量, 如果大于8个, 则等待
+                while running_count < max_parse_count:
+                    response_one = self.get_pages(dataset.id, status=0)
+                    # for page in range(1, total_pages + 1):
+                    #     response = self.get_pages(dataset.id, '0', page)
+                    doc_list = response_one['data']['docs']
+                    for doc in doc_list:
+                        doc_id = doc['id']
+                        doc_name = doc['name']
+                        run = doc['run']
+                        if run == 0 or run == 2:
+                            self.parse_files(doc_id, doc_name)
+                            running_count += 1
+                            time.sleep(5)
+                    response_two = self.get_pages(dataset.id, status=2)
+                    doc_list = response_two['data']['docs']
+                    running_count = response_two['data']['total']
+                    if running_count:
+                        for doc in doc_list:
+                            doc_id = doc['id']
+                            doc_name = doc['name']
+                            run = doc['run']
+                            if run == 0 or run == 2:
+                                self.parse_files(doc_id, doc_name)
+                                running_count += 1
+                                time.sleep(5)
+                    else:
+                        break
+                current_time = time.time()
+                if current_time - last_monitor_time >= check_interval:
+                    # 查询并打印正在解析的数量
+                    running_response = self.get_pages(dataset.id, status=1)
+                    running_count = running_response['data']['total']
+                    logger.info(f"【监控】当前正在解析的文件数量：{running_count}/{max_parse_count}")
+                    last_monitor_time = current_time  # 更新上次监控时间
+                else:
+                    time.sleep(10)
             except Exception as e:
-                logger.error(f"第{page}页处理出错: {str(e)}")
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(process_page, page) for page in range(1, total_pages + 1)]
-            for future in as_completed(futures):
-                pass
+                logger.error(f"处理出错: {str(e)}")
+                self.headers['authorization'] = self.get_authorization()
         logger.info("所有文档遍历完成")
 
+    def parse_files(self, doc_ids, doc_name):
+        json_data = {
+            'doc_ids': [
+                doc_ids,
+            ],
+            'run': 1,
+            'delete': False,
+        }
+        response = requests.post('https://www.yutubang.com/v1/document/run', headers=self.headers,json=json_data)
+        if response.json()['message'] == "success":
+            logger.info(f"{doc_name}开始解析")
+    @retry(max_retries=3, retry_delay=2)
     def get_pages(self, kb_id, status, page=10):
         """
         获取所有文件分页
@@ -222,20 +262,56 @@ class BaseProcessor:
         }
         json_data = {}
         response = requests.post('https://www.yutubang.com/v1/document/ids/list', params=params, headers=self.headers,json=json_data).json()
-        return response['data']['total']
+        return response
 
-
-    # 所有文件停止解析--遍历整个知识库, 获取所有文档,并停止解析
     def cancel_all_files(self, dataset):
         """
         批量停止解析文件
         :param dataset: 数据集对象
         """
-        for page in range(1, dataset.document_count // 30 + 30):
-            documents = dataset.list_documents(page=page)
-            for doc in documents:
-                if doc.status == 'parsing':
-                    dataset.cancel_document(doc.id)
+        doc_ids = []
+        response = self.get_pages(dataset.id, status=1)
+        total = response['data']['total']
+        logger.info("一共{}个正在解析的文件".format(total))
+        total_pages = math.ceil(total / 100)
+        for page in range(1, total_pages + 1):
+            response = self.get_pages(dataset.id, '1', page)
+            doc_list = response['data']['docs']
+            for doc in doc_list:
+                doc_id = doc['id']
+                run = doc['run']
+                if run == '1':
+                    doc_ids.append(doc_id)
+                    if len(doc_ids) == 500:
+                        self.cancel_doc(doc_ids)
+                        doc_ids.clear()
+        # 处理剩余文档
+        print(doc_ids)
+        if doc_ids:
+            self.cancel_doc(doc_ids)
+
+
+    def cancel_doc(self, doc_ids):
+        json_data = {
+            'doc_ids': doc_ids,
+            'run': 2,
+            'delete': False,
+        }
+        response = requests.post('https://www.yutubang.com/v1/document/run', headers=self.headers, json=json_data)
+        logger.info(response.json())
+
+
+    # 所有文件停止解析--遍历整个知识库, 获取所有文档,并停止解析
+    # def cancel_all_files(self, dataset):
+    #     """
+    #     批量停止解析文件
+    #     :param dataset: 数据集对象
+    #     """
+    #     for page in range(1, dataset.document_count // 30 + 30):
+    #         documents = dataset.list_documents(page=page)
+    #         for doc in documents:
+    #             if doc.status == 'parsing':
+    #                 dataset.cancel_document(doc.id)
 
     # 对已经解析的文档进行分块处理
 
@@ -281,21 +357,21 @@ class BaseProcessor:
                 # 当收集的ID达到批量阈值时，执行删除
                 if len(delete_ids) >= batch_size:
                     dataset.delete_documents(delete_ids)
-                    print(f"已删除第{page}页批次，共{len(delete_ids)}个文档")
+                    logger.info(f"已删除第{page}页批次，共{len(delete_ids)}个文档")
                     delete_ids = []  # 清空列表，继续收集
 
                 page += 1
 
             except Exception as e:
-                print(f"获取第{page}页文档失败：{str(e)}")
+                logger.info(f"获取第{page}页文档失败：{str(e)}")
                 break
 
         # 处理剩余不足一批的ID
         if delete_ids:
             dataset.delete_documents(delete_ids)
-            print(f"处理剩余文档，共删除{len(delete_ids)}个文档")
+            logger.info(f"处理剩余文档，共删除{len(delete_ids)}个文档")
 
-        print("重复文件批量删除完成")
+        logger.info("重复文件批量删除完成")
 
     def upload_files(self, dataset, urls):
         """
@@ -458,7 +534,7 @@ class BaseProcessor:
                 if doc.name.lower().endswith('.docx'):
                     fixed_name = self.fix_double_dot_in_filename(doc.name)
                     doc.update({"name": fixed_name})
-                    print(doc.name)
+                    logger.info(doc.name)
 
 
 
@@ -511,7 +587,7 @@ class BaseProcessor:
                 f'Content-Disposition: form-data; name="file"; filename={file_name}\r\n'
                 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n'
             )
-            print(dataset.id, file_name)
+            logger.info(dataset.id, file_name)
 
 
     def delete_doc_files(self, dataset):
@@ -539,7 +615,7 @@ class BaseProcessor:
             documents = self.dataset.list_documents(page=page)
             for doc in documents:
                 if doc.name.lower().endswith('.doc'):
-                    print(doc.run, doc.name, doc.type)
+                    logger.info(doc.run, doc.name, doc.type)
                     url = f'{self.base_url}/v1/document/get/{doc.id}'
                     base_name, ext = os.path.splitext(doc.name)
                     doc.name = f"{base_name}.docx"
@@ -555,7 +631,7 @@ class BaseProcessor:
                     data = data.encode('utf-8') + file_content + b'\r\n------WebKitFormBoundaryPBd18zhngU409CSz--\r\n'
                     upload_url = f'{self.base_url}/v1/document/upload'
                     response = requests.post(upload_url, headers=headers, data=data, verify=False)
-                    print('响应内容:', response.text)
+                    logger.info('响应内容:', response.text)
                     self.delete_documents([doc.id])
 
 
