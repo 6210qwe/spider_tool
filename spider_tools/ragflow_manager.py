@@ -13,12 +13,14 @@ from spider_tools.file_download import FileDownloader
 import threading
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from encrypt_util import rsa_encrypt
+from spider_tools.encrypt_util import rsa_encrypt
+
+
 # ragflow-sdk 常用操作
 # 获取所有的知识库 self.rag_object.list_datasets()
 # 删除一个知识库下所有的文件, 要删除的文档的 ID。如果未指定，则数据集中的所有文档都将被删除。None  self.dataset.delete_documents()
 class BaseProcessor:
-    def __init__(self, dataset_name, description,ragflow_config=None, user_info=None):
+    def __init__(self, dataset_name, description, ragflow_config=None, user_info=None):
         self.ragflow_config = ragflow_config or {}
         if not self.ragflow_config.get('api_key'):
             raise ValueError("缺少RAGFlow API密钥配置")
@@ -34,6 +36,17 @@ class BaseProcessor:
         self.description = description
         self.MAX_FILENAME_LENGTH = 100
         self.base_url = str(self.ragflow_config['base_url']).rstrip('/')
+        # 仅当传入email和password时，才执行登录
+        if self.user_info.get('email') and self.user_info.get('password'):
+            try:
+                self.authorization = self.get_authorization()
+                self.is_logged_in = True
+                logger.info("账号登录初始化成功")
+            except Exception as e:
+                logger.error(f"账号登录初始化失败: {e}")
+                self.authorization = ""
+        # else:
+        #     logger.warning("未传入账号密码，跳过登录初始化（仅可执行无需登录的操作）")
         self.headers = {
             'accept': 'application/json',
             'accept-language': 'zh-CN,zh;q=0.9',
@@ -55,8 +68,12 @@ class BaseProcessor:
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
             'cookie': f'session={self.ragflow_config.get("session_cookie", "")}',
         }
+
     # 获取账号token授权用于后续操作
     def get_authorization(self):
+        if not self.user_info.get('email') or not self.user_info.get('password'):
+            # logger.warning("未提供邮箱/密码，无法获取登录授权")
+            return ""
         headers = {
             'accept': 'application/json',
             'accept-language': 'zh-CN,zh;q=0.9',
@@ -180,12 +197,13 @@ class BaseProcessor:
         page_size = 100
         total = self.get_pages(dataset.id, status=0)['data']['total']
         logger.info("一共{}未解析文档".format(total))
-        total_cancel= self.get_pages(dataset.id, status=2)['data']['total']
+        total_cancel = self.get_pages(dataset.id, status=2)['data']['total']
         logger.info("一共{}个取消文档".format(total_cancel))
         if total == 0:
             logger.info("无文档可处理")
             return
         total_pages = math.ceil(total / page_size)
+        # running_count = self.get_pages(dataset.id, status=1)['data']['total']  # 当前解析文件的数量
         running_count = self.get_pages(dataset.id, status=1)['data']['total']  # 当前解析文件的数量
         logger.info("当前解析文件数量为{}".format(running_count))
         max_parse_count = 8
@@ -204,10 +222,10 @@ class BaseProcessor:
                         doc_id = doc['id']
                         doc_name = doc['name']
                         run = doc['run']
-                        if run == 0 or run == 2:
+                        if run == '0' or run == '2':
                             self.parse_files(doc_id, doc_name)
                             running_count += 1
-                            time.sleep(5)
+                            # time.sleep(0.3)
                     response_two = self.get_pages(dataset.id, status=2)
                     doc_list = response_two['data']['docs']
                     running_count = response_two['data']['total']
@@ -216,10 +234,10 @@ class BaseProcessor:
                             doc_id = doc['id']
                             doc_name = doc['name']
                             run = doc['run']
-                            if run == 0 or run == 2:
+                            if run == '0' or run == '2':
                                 self.parse_files(doc_id, doc_name)
                                 running_count += 1
-                                time.sleep(5)
+                                # time.sleep(0.3)
                     else:
                         break
                 current_time = time.time()
@@ -244,9 +262,10 @@ class BaseProcessor:
             'run': 1,
             'delete': False,
         }
-        response = requests.post('https://www.yutubang.com/v1/document/run', headers=self.headers,json=json_data)
+        response = requests.post('https://www.yutubang.com/v1/document/run', headers=self.headers, json=json_data)
         if response.json()['message'] == "success":
             logger.info(f"{doc_name}开始解析")
+
     @retry(max_retries=3, retry_delay=2)
     def get_pages(self, kb_id, status, page=10):
         """
@@ -256,12 +275,13 @@ class BaseProcessor:
         params = {
             'kb_id': kb_id,
             'keywords': '',
-            'page_size': '100',
+            'page_size': '20',
             'page': str(page),
             'run_status': status
         }
         json_data = {}
-        response = requests.post('https://www.yutubang.com/v1/document/ids/list', params=params, headers=self.headers,json=json_data).json()
+        response = requests.post('https://www.yutubang.com/v1/document/ids/list', params=params, headers=self.headers,
+                                 json=json_data).json()
         return response
 
     def cancel_all_files(self, dataset):
@@ -290,7 +310,6 @@ class BaseProcessor:
         if doc_ids:
             self.cancel_doc(doc_ids)
 
-
     def cancel_doc(self, doc_ids):
         json_data = {
             'doc_ids': doc_ids,
@@ -299,7 +318,6 @@ class BaseProcessor:
         }
         response = requests.post('https://www.yutubang.com/v1/document/run', headers=self.headers, json=json_data)
         logger.info(response.json())
-
 
     # 所有文件停止解析--遍历整个知识库, 获取所有文档,并停止解析
     # def cancel_all_files(self, dataset):
@@ -314,8 +332,6 @@ class BaseProcessor:
     #                 dataset.cancel_document(doc.id)
 
     # 对已经解析的文档进行分块处理
-
-
 
     def delete_files_by_status(self, dataset, status):
         """
@@ -394,7 +410,6 @@ class BaseProcessor:
             for doc in documents:
                 logger.info(f'{doc.run}, {doc.name}')
 
-
     # def reprocess_all_files(self, dataset, time_sleep=10):
     #     for page in range(1, dataset.document_count // 30 + 30):
     #         documents = dataset.list_documents(page=page)
@@ -436,8 +451,6 @@ class BaseProcessor:
         except Exception as e:
             logger.error(e)
 
-
-
     def reprocess_files(self, dataset, doc, time_sleep=10):
         try:
             json_data = {
@@ -454,7 +467,6 @@ class BaseProcessor:
             # self.check_file_status(dataset, doc)
         except Exception as e:
             logger.error(e)
-
 
     def _process_pending_doc(self, doc, dataset, time_sleep, max_wait):
         try:
@@ -505,7 +517,6 @@ class BaseProcessor:
                 time.sleep(time_sleep)
                 logger.info(f"等待失败文档 {doc.name} 重新解析，已等待 {wait_time} 秒")
 
-
             if wait_time >= max_wait:
                 logger.warning(f"失败文档 {doc.name} 重新解析超时")
         except Exception as e:
@@ -519,9 +530,7 @@ class BaseProcessor:
             logger.error(f"获取文档 {doc_id} 信息失败: {e}")
             return None
 
-
-
-    def fix_double_dot_in_filename(self,filename):
+    def fix_double_dot_in_filename(self, filename):
         """将文件名中的双点(..)替换为单点(.)"""
         # 使用正则表达式替换连续的两个点为单个点
         import re
@@ -536,8 +545,6 @@ class BaseProcessor:
                     doc.update({"name": fixed_name})
                     logger.info(doc.name)
 
-
-
     def cancle_all_files(self, dataset):
         for page in range(1, dataset.document_count // 30 + 30):
             documents = self.dataset.list_documents(page=page)
@@ -549,7 +556,6 @@ class BaseProcessor:
                         logger.info(f"{doc.name} 取消成功")
                     except Exception as e:
                         logger.error(f"处理文档 {doc.name} 时出错: {e}")  # 添加异常捕获
-
 
     def upload_file(self, dataset, files):
         """
@@ -588,7 +594,6 @@ class BaseProcessor:
                 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n'
             )
             logger.info(dataset.id, file_name)
-
 
     def delete_doc_files(self, dataset):
         authorization = self.get_authorization()
@@ -633,10 +638,6 @@ class BaseProcessor:
                     response = requests.post(upload_url, headers=headers, data=data, verify=False)
                     logger.info('响应内容:', response.text)
                     self.delete_documents([doc.id])
-
-
-
-
 
     def delete_dataset(self, id):
         self.rag_object.delete_datasets([id])
@@ -685,7 +686,6 @@ class BaseProcessor:
         except Exception as e:
             logger.error(f"上传文件时出错: {e}")
             return False
-
 
     def process_documents(self, url, title):
         """
