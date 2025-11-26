@@ -2,7 +2,6 @@ import os
 import re
 from io import BytesIO
 from typing import Dict, List, Tuple
-
 from loguru import logger
 from docx import Document
 import tempfile
