@@ -41,7 +41,6 @@ def remove_blank(text: str) -> str:
     """移除空格与零宽空格。"""
     return re.sub(r"[ \u200B]+", "", text)
 
-
 # def extract_docx(file_path: str) -> List[Dict]:
 #     """
 #     解析 .docx 文件为片段列表：段落与表格。
